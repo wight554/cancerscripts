@@ -117,7 +117,7 @@ kernel()
   then
     make O="${BUILD_DIR}" "${JOBS_FLAG}" \
 		ARCH="arm64" \
-		CC="${CLANG}" \
+		CC="${CCACHE} ${CLANG}" \
 		CLANG_TRIPLE="aarch64-linux-gnu-" \
 		KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
 		KCFLAGS="${KCFLAGS}" \
@@ -127,7 +127,7 @@ kernel()
   then
     make O="${BUILD_DIR}" "${JOBS_FLAG}" \
 		ARCH="arm64" \
-		CROSS_COMPILE="${CC}" \
+		CROSS_COMPILE="${CCACHE} ${CC}" \
 		Image.gz-dtb
   fi
 }

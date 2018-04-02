@@ -21,6 +21,9 @@ export USER="${KBUILD_BUILD_USER}"
 THREADS="$(($(nproc --all) + 1))"
 JOBS_FLAG="-j${THREADS}"
 
+# Common ccache variable
+CCACHE=$(command -v ccache)
+
 # Alias for echo to print escape codes
 function echo() {
     command echo -e "${@}"
