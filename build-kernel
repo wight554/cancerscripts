@@ -51,14 +51,14 @@ CC=${GCC%gcc}
 # Optimizations (clang only)
 if [ "$TOOLCHAIN" == "clang" ]
 then
-  SCRIPT_OPT_FLAGS="-mllvm -polly \
-		-mllvm -polly-run-dce \
-		-mllvm -polly-run-inliner \
-		-mllvm -polly-opt-fusion=max \
-		-mllvm -polly-ast-use-context \
-		-mllvm -polly-vectorizer=stripmine \
-		-mllvm -polly-detect-keep-going \
-		-fsanitize=local-init"
+  KCFLAGS="-mllvm -polly \
+		       -mllvm -polly-run-dce \
+		       -mllvm -polly-run-inliner \
+		       -mllvm -polly-opt-fusion=max \
+		       -mllvm -polly-ast-use-context \
+		       -mllvm -polly-vectorizer=stripmine \
+		       -mllvm -polly-detect-keep-going \
+		       -fsanitize=local-init"
 fi
 
 # Start madness
@@ -81,7 +81,7 @@ compile()
 		CC=$CLANG \
 		CLANG_TRIPLE=aarch64-linux-gnu- \
 		KBUILD_COMPILER_STRING=$CLANG_VERSION \
-		SCRIPT_OPT_FLAGS=$SCRIPT_OPT_FLAGS \
+		KCFLAGS=$KCFLAGS \
 		CROSS_COMPILE=$CC \
 		Image.gz-dtb
   else
