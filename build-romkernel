@@ -78,10 +78,11 @@ fi
 if [ "$GDRIVE" == "gdrive" ]
 then
   echo -e "${bldblu}Uploading stuffs to Google Drive ${txtrst}"
-  gdrive upload $BUILD_PATH/boot.img;
   if [ "$ANYKERNEL" == "ak" ]
   then
     gdrive upload $AK2_PATH/$ZIPNAME.zip
+  else
+    gdrive upload $BUILD_PATH/boot.img;
   fi
 fi
 
