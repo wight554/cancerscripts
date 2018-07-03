@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# Input
+DEVICE="$1"
+TOOLCHAIN="$2"
+GDRIVE="$3"
+
+# Colors
+NC='\033[0m'
+RED='\033[0;31m'
+LGR='\033[1;32m'
+
+# AK2 zip name
+ZIPNAME="EmerissKernel-$DEVICE-$(date +'%Y%m%d')"
+
+# Build dirs
+SCRIPTS=$PWD
+KERNEL_DIR=../$DEVICE
+AK2_DIR=../ak2-$DEVICE
+BUILD_DIR=../build-$DEVICE
+
+# Check the device
+if [ -z $DEVICE ]
+then
+  echo "Choose device to proceed!"; cd $SCRIPTS; return 0;
+fi
+
+# Check the toolchain
+if [[ -z $TOOLCHAIN && $DEVICE != "kenzo" ]] 
+then
+  echo "Choose toolchain to proceed!"; cd $SCRIPTS; return 0;
+fi
+
+# Enviroment stuffs
+DEFCONFIG=${DEVICE}_defconfig
+CLANG_FOLDER=$HOME/toolchains/flash-clang-7.x/
+CLANG=$CLANG_FOLDER/bin/clang
+CLANG_VERSION=$($CLANG --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+
+# Use GCC 7 for kenzo (coz kanzur)
+if [ "$DEVICE" == "kenzo" ]
+then 
+  GCC_FOLDER=$HOME/toolchains/linaro-gcc-7.x
+else
+  GCC_FOLDER=$HOME/toolchains/gnu-gcc-8.x
+fi
+
+GCC=$(find $GCC_FOLDER/bin \( -type f -o -type l \) -name '*-gcc' | head -n1)
+CC=${GCC%gcc}
+
+# Optimizations (clang only)
+if [ "$TOOLCHAIN" == "clang" ]
+then
+  SCRIPT_OPT_FLAGS="-mllvm -polly \
+		-mllvm -polly-run-dce \
+		-mllvm -polly-run-inliner \
+		-mllvm -polly-opt-fusion=max \
+		-mllvm -polly-ast-use-context \
+		-mllvm -polly-vectorizer=stripmine \
+		-mllvm -polly-detect-keep-going \
+		-fsanitize=local-init"
+fi
+
+# Start madness
+cd $KERNEL_DIR
+BUILD_START=$(date +"%s")
+make_defconfig() 
+{
+  rm -rf $BUILD_DIR/arch/arm64/boot/dts/qcom/
+  echo -e ${LGR} "############# Generating defconfig ##############${NC}"
+  make -s ARCH=arm64 O=$BUILD_DIR $DEFCONFIG -j8
+}
+compile() 
+{
+  echo -e ${LGR} "############### Compiling kernel ################${NC}"
+  # Kenzo runs GCC only so no need to type gcc
+  if [ "$TOOLCHAIN" == "clang" ]
+  then
+    make O=$BUILD_DIR -j8 \
+		ARCH=arm64 \
+		CC=$CLANG \
+		CLANG_TRIPLE=aarch64-linux-gnu- \
+		KBUILD_COMPILER_STRING=$CLANG_VERSION \
+		SCRIPT_OPT_FLAGS=$SCRIPT_OPT_FLAGS \
+		CROSS_COMPILE=$CC \
+		Image.gz-dtb
+  else
+    make O=$BUILD_DIR -j8 \
+		ARCH=arm64 \
+		CROSS_COMPILE=$CC \
+		Image.gz-dtb
+  fi
+
+}
+ramdisk() 
+{
+  cd $BUILD_DIR
+  COMPILED_IMAGE=arch/arm64/boot/Image.gz-dtb
+  if [[ -f $COMPILED_IMAGE ]]; then
+    mv -f $COMPILED_IMAGE $AK2_DIR/Image.gz-dtb
+    cd $AK2_DIR
+    zip -r9 $ZIPNAME.zip * --exclude=*README* --exclude=*.zip  $ZIPNAME.zip
+    BUILD_END=$(date +"%s")
+    DIFF=$(($BUILD_END - $BUILD_START))
+    # Gdrive upload is simple af
+    if [ "$GDRIVE" == "gdrive" ]
+    then
+      gdrive upload $ZIPNAME.zip
+    fi
+    echo -e ${LGR} "#################################################"
+    echo -e ${LGR} "############### Build competed! #################"
+    echo -e ${LGR} "###### Duration: $(($DIFF / 60)) minutes and $(($DIFF % 60)) seconds. ######${NC}"
+    echo -e ${LGR} "#################################################${NC}"
+  else
+    echo -e ${RED} "#################################################"
+    echo -e ${RED} "############### Build failed, RIP ###############"
+    echo -e ${RED} "#################################################${NC}"
+  fi
+}
+make_defconfig
+compile
+ramdisk
+cd $SCRIPTS

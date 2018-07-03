@@ -1,0 +1,135 @@
+#!/bin/bash
+
+# Setup compiler stuff
+export USE_CCACHE=1
+/usr/bin/ccache -M 50G
+
+# Colorize and add text parameters
+red=$(tput setaf 1)             #  red
+grn=$(tput setaf 2)             #  green
+cya=$(tput setaf 6)             #  cyan
+txtbld=$(tput bold)             # Bold
+bldred=${txtbld}$(tput setaf 1) #  red
+bldgrn=${txtbld}$(tput setaf 2) #  green
+bldblu=${txtbld}$(tput setaf 4) #  blue
+bldcya=${txtbld}$(tput setaf 6) #  cyan
+txtrst=$(tput sgr0)             # Reset
+
+ROM="$1"
+DEVICE="$2"
+GDRIVE="$3"
+SHUTDOWN="$4"
+
+SCRIPTS=$PWD
+ROM_PATH=../$ROM
+
+# Start tracking time
+echo -e ${bldblu}
+echo -e "---------------------------------------"
+echo -e "SCRIPT STARTING AT $(date +%D\ %r)"
+echo -e "---------------------------------------"
+echo -e ${txtrst}
+
+START=$(date +%s)
+
+# Check ROM
+if [ "$ROM" == "abc" ]
+then
+  echo -e "Let's build karntest ROM... ${txtrst}"
+elif [ "$ROM" == "aosip" ]
+then
+  echo -e "Let's build weird birb ROM.. ${txtrst}"
+else
+  echo "Choose AOSIP or ABC to proceed!"; cd $SCRIPTS; return 0;
+fi
+
+# Setup environment
+echo -e "${bldblu}Setting up build environment ${txtrst}"
+cd $ROM_PATH
+. build/envsetup.sh
+
+# Set the device
+if [ -z $DEVICE ]
+then
+  echo "Choose device to proceed!"; cd $SCRIPTS; return 0;
+fi
+echo -e "Setting up the device... ${txtrst}"
+if [ "$ROM" == "abc" ]
+then
+  breakfast "$DEVICE-userdebug"
+elif [ "$ROM" == "aosip" ]
+then
+  lunch aosip_$DEVICE-userdebug
+fi
+
+# ROM related stuffs
+if [ "$ROM" == "abc" ]
+then
+  ROMNAME=ABC_ROM*$DEVICE*.zip
+elif [ "$ROM" == "aosip" ]
+then
+  ROMNAME=AOSiP*$DEVICE*.zip
+fi
+
+ROMZIP=$ROM_PATH/out/target/product/$DEVICE/$ROMNAME
+
+# Always do installclean
+make installclean;
+
+#  Start compilation
+echo -e "${bldblu}Compiling $ROM for $DEVICE and saving a build log file ${txtrst}"
+if [ "$ROM" == "abc" ]
+then
+  mka bacon 2>&1 | tee build.log;
+elif [ "$ROM" == "aosip" ]
+then
+  time mka kronic 2>&1 | tee build.log;
+fi
+
+# If the above was successful
+if [ `ls $ROMZIP 2>/dev/null | wc -l` != "0" ]
+then
+  BUILD_RESULT="Build successful"
+  # Google Drive upload
+  if [ "$GDRIVE" == "gdrive" ]
+  then
+    echo -e "${bldblu}Uploading build to Google Drive ${txtrst}"
+    gdrive upload $ROMZIP
+    # Upload changelog if ABC
+    if [ "$ROM" == "abc" ]
+    then
+      gdrive upload $ROM_PATH/out/target/product/$DEVICE/ABC-Changelog-$DEVICE*.txt
+    fi
+  fi
+# If the build failed
+else
+  BUILD_RESULT="Build failed"
+fi
+
+# back to root dir
+cd $ROOT_PATH
+
+# Stop tracking time
+END=$(date +%s)
+echo -e ${bldblu}
+echo -e "-------------------------------------"
+echo -e "SCRIPT ENDING AT $(date +%D\ %r)"
+echo -e ""
+echo -e "${BUILD_RESULT}!"
+echo -e "TIME: $(echo $((${END}-${START})) | awk '{print int($1/60)" MINUTES AND "int($1%60)" SECONDS"}')"
+echo -e "-------------------------------------"
+echo -e ${txtrst}
+
+BUILDTIME="Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
+
+# Kill java if it's hanging on
+pkill java
+
+# Back to scripts folder
+cd $SCRIPTS
+
+# Shutdown the system if required by the user
+if [ "$SHUTDOWN" == "off" ]
+then
+  sudo poweroff
+fi

@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Setup compiler stuff
+export USE_CCACHE=1
+/usr/bin/ccache -M 50G
+
+# Colorize and add text parameters
+red=$(tput setaf 1)             #  red
+grn=$(tput setaf 2)             #  green
+cya=$(tput setaf 6)             #  cyan
+txtbld=$(tput bold)             # Bold
+bldred=${txtbld}$(tput setaf 1) #  red
+bldgrn=${txtbld}$(tput setaf 2) #  green
+bldblu=${txtbld}$(tput setaf 4) #  blue
+bldcya=${txtbld}$(tput setaf 6) #  cyan
+txtrst=$(tput sgr0)             # Reset
+
+ROM="$1"
+DEVICE="$2"
+GDRIVE="$3"
+ANYKERNEL="$4"
+
+SCRIPTS=$PWD
+ROM_PATH=../$ROM
+AK2_PATH=../ak2-$DEVICE
+BUILD_PATH=$ROM_PATH/out/target/product/$DEVICE
+
+# AK2 zip name
+ZIPNAME="EmerissKernel-$DEVICE-$(date +'%Y%m%d')"
+
+# Time of build startup
+res1=$(date +%s.%N)
+
+# Check ROM
+if [ "$ROM" == "abc" ]
+then
+  echo -e "${bldblu}Let's build bootimage karntest ROM... ${txtrst}"
+elif [ "$ROM" == "aosip" ]
+then
+  echo -e "${bldblu}Let's build bootimage for weird birb ROM.. ${txtrst}"
+else
+  echo "${bldblu}Choose AOSIP or ABC to proceed!${txtrst}"; cd $SCRIPTS; return 0;
+fi
+
+# Setup environment
+echo -e "${bldblu}Setting up build environment ${txtrst}"
+cd $ROM_PATH
+. build/envsetup.sh
+
+# Set the device
+if [ -z $DEVICE ]
+then
+  echo "Choose device to proceed!"; cd $SCRIPTS; return 0;
+fi
+echo -e "Setting up the device... ${txtrst}"
+if [ "$ROM" == "abc" ]
+then
+  breakfast "$DEVICE-userdebug"
+elif [ "$ROM" == "aosip" ]
+then
+  lunch aosip_$DEVICE-userdebug
+fi
+
+# Start compilation with log
+echo -e "${bldblu}Starting build kernel for $DEVICE and saving a build log file ${txtrst}"
+mka bootimage 2>&1 | tee buildkernel.log;
+
+# Go anykernel
+if [ "$ANYKERNEL" == "ak" ]
+then
+  echo -e "${bldblu}Adding kernel to AnyKernel2 ${txtrst}"
+  mv $BUILD_PATH/kernel $AK2_PATH/Image.gz-dtb
+  cd $AK2_PATH
+  zip -r9 $ZIPNAME.zip * --exclude=*README* --exclude=*.zip  $ZIPNAME.zip
+fi
+
+# Google Drive upload
+if [ "$GDRIVE" == "gdrive" ]
+then
+  echo -e "${bldblu}Uploading stuffs to Google Drive ${txtrst}"
+  gdrive upload $BUILD_PATH/boot.img;
+  if [ "$ANYKERNEL" == "ak" ]
+  then
+    gdrive upload $AK2_PATH/$ZIPNAME.zip
+  fi
+fi
+
+# Get elapsed time
+res2=$(date +%s.%N)
+echo "${bldgrn}Total time elapsed: ${txtrst}${grn}$(echo "($res2 - $res1) / 60"|bc ) minutes ($(echo "$res2 - $res1"|bc ) seconds) ${txtrst}"
+
+# Back to scripts folder
+cd $SCRIPTS
