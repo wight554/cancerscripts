@@ -98,7 +98,7 @@ then
     # Upload changelog if ABC
     if [ "$ROM" == "abc" ]
     then
-      gdrive upload $ROM_PATH/out/target/product/$DEVICE/ABC-Changelog-$DEVICE*.txt
+      gdrive upload $ROM_PATH/out/target/product/$DEVICE/ABC-Changelog-$DEVICE*$(date +'%Y%m%d').txt
     fi
   fi
 # If the build failed
