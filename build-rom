@@ -20,8 +20,8 @@ DEVICE="$2"
 GDRIVE="$3"
 SHUTDOWN="$4"
 
-SCRIPTS=$PWD
-ROM_PATH=../$ROM
+CURRENT_PATH=$PWD
+ROM_PATH=$HOME/$ROM
 
 # Start tracking time
 echo -e ${bldblu}
@@ -40,7 +40,7 @@ elif [ "$ROM" == "aosip" ]
 then
   echo -e "Let's build weird birb ROM.. ${txtrst}"
 else
-  echo "Choose AOSIP or ABC to proceed!"; cd $SCRIPTS; return 0;
+  echo "Choose AOSIP or ABC to proceed!"; cd $CURRENT_PATH; return 0;
 fi
 
 # Setup environment
@@ -51,7 +51,7 @@ cd $ROM_PATH
 # Set the device
 if [ -z $DEVICE ]
 then
-  echo "Choose device to proceed!"; cd $SCRIPTS; return 0;
+  echo "Choose device to proceed!"; cd $CURRENT_PATH; return 0;
 fi
 echo -e "Setting up the device... ${txtrst}"
 if [ "$ROM" == "abc" ]
@@ -126,7 +126,7 @@ BUILDTIME="Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" min
 pkill java
 
 # Back to scripts folder
-cd $SCRIPTS
+cd $CURRENT_PATH
 
 # Shutdown the system if required by the user
 if [ "$SHUTDOWN" == "off" ]

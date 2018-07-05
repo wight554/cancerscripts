@@ -20,9 +20,9 @@ DEVICE="$2"
 GDRIVE="$3"
 ANYKERNEL="$4"
 
-SCRIPTS=$PWD
-ROM_PATH=../$ROM
-AK2_PATH=../ak2-$DEVICE
+CURRENT_PATH=$PWD
+ROM_PATH=$HOME/$ROM
+AK2_PATH=$HOME/ak2-$DEVICE
 BUILD_PATH=$ROM_PATH/out/target/product/$DEVICE
 
 # AK2 zip name
@@ -91,4 +91,4 @@ res2=$(date +%s.%N)
 echo "${bldgrn}Total time elapsed: ${txtrst}${grn}$(echo "($res2 - $res1) / 60"|bc ) minutes ($(echo "$res2 - $res1"|bc ) seconds) ${txtrst}"
 
 # Back to scripts folder
-cd $SCRIPTS
+cd $CURRENT_PATH
