@@ -63,13 +63,14 @@ fi
 
 # Start compilation with log
 echo -e "${bldblu}Starting build kernel for $DEVICE and saving a build log file ${txtrst}"
+rm -f $BUILD_PATH/{boot.img,kernel}
 mka bootimage 2>&1 | tee buildkernel.log;
 
 # Go anykernel
 if [ "$ANYKERNEL" == "ak" ]
 then
   echo -e "${bldblu}Adding kernel to AnyKernel2 ${txtrst}"
-  mv $BUILD_PATH/kernel $AK2_PATH/Image.gz-dtb
+  mv -f $BUILD_PATH/kernel $AK2_PATH/Image.gz-dtb
   cd $AK2_PATH
   zip -r9 $ZIPNAME.zip * --exclude=*README* --exclude=*.zip  $ZIPNAME.zip
 fi
