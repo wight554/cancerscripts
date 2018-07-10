@@ -65,7 +65,7 @@ fi
 # ROM related stuffs
 if [ "$ROM" == "abc" ]
 then
-  ROMNAME=ABC_ROM*$DEVICE*.zip
+  ROMNAME=ABC-*$DEVICE*$(date +'%Y%m%d').zip
 elif [ "$ROM" == "aosip" ]
 then
   ROMNAME=AOSiP*$DEVICE*.zip
@@ -98,7 +98,7 @@ then
     # Upload changelog if ABC
     if [ "$ROM" == "abc" ]
     then
-      gdrive upload $ROM_PATH/out/target/product/$DEVICE/ABC-Changelog-$DEVICE*$(date +'%Y%m%d').txt
+      gdrive upload $ROM_PATH/out/target/product/$DEVICE/Changelog-*$DEVICE*$(date +'%Y%m%d').txt
     fi
   fi
 # If the build failed
