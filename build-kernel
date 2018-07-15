@@ -19,6 +19,10 @@ KERNEL_DIR=$HOME/android/$DEVICE
 AK2_DIR=$HOME/android/ak2-$DEVICE
 BUILD_DIR=$HOME/android/build-$DEVICE
 
+# MAKE THREADS
+THREADS=$(($(nproc --all) + 1))
+JOBS_FLAG="-j${THREADS}"
+
 # Check the device
 if [ -z $DEVICE ]
 then
@@ -67,7 +71,7 @@ make_defconfig()
 {
   rm -rf $BUILD_DIR/arch/arm64/boot/dts/qcom/
   echo -e ${LGR} "############# Generating defconfig ##############${NC}"
-  make -s ARCH=arm64 O=$BUILD_DIR $DEFCONFIG -j8
+  make -s ARCH=arm64 O=$BUILD_DIR $DEFCONFIG $JOBS_FLAG
 }
 compile() 
 {
@@ -75,7 +79,7 @@ compile()
   # Kenzo runs GCC only so no need to type gcc
   if [ "$TOOLCHAIN" == "clang" ]
   then
-    make O=$BUILD_DIR -j8 \
+    make O=$BUILD_DIR $JOBS_FLAG \
 		ARCH=arm64 \
 		CC=$CLANG \
 		CLANG_TRIPLE=aarch64-linux-gnu- \
@@ -83,8 +87,9 @@ compile()
 		KCFLAGS="$KCFLAGS" \
 		CROSS_COMPILE=$CC \
 		Image.gz-dtb
-  else
-    make O=$BUILD_DIR -j8 \
+  elif [ "$TOOLCHAIN" == "gcc" ]
+  then
+    make O=$BUILD_DIR $JOBS_FLAG \
 		ARCH=arm64 \
 		CROSS_COMPILE=$CC \
 		Image.gz-dtb
