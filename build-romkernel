@@ -26,7 +26,7 @@ AK2_PATH=$HOME/ak2-$DEVICE
 BUILD_PATH=$ROM_PATH/out/target/product/$DEVICE
 
 # AK2 zip name
-ZIPNAME="EmerissKernel-$DEVICE-$(date +'%Y%m%d')"
+ZIPNAME="PlaceholderKernel-$DEVICE-$(date +'%Y%m%d')"
 
 # Time of build startup
 res1=$(date +%s.%N)

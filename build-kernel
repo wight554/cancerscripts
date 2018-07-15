@@ -11,7 +11,7 @@ RED='\033[0;31m'
 LGR='\033[1;32m'
 
 # AK2 zip name
-ZIPNAME="EmerissKernel-$DEVICE-$(date +'%Y%m%d')"
+ZIPNAME="PlaceholderKernel-$DEVICE-$(date +'%Y%m%d')"
 
 # Build dirs
 SCRIPTS=$PWD
