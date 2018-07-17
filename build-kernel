@@ -15,9 +15,9 @@ ZIPNAME="PlaceholderKernel-$DEVICE-$(date +'%Y%m%d')"
 
 # Build dirs
 SCRIPTS=$PWD
-KERNEL_DIR=$HOME/android/$DEVICE
-AK2_DIR=$HOME/android/ak2-$DEVICE
-BUILD_DIR=$HOME/android/build-$DEVICE
+KERNEL_DIR=$HOME/linux/$DEVICE
+AK2_DIR=$HOME/linux/ak2-$DEVICE
+BUILD_DIR=$HOME/linux/build-$DEVICE
 
 # MAKE THREADS
 THREADS=$(($(nproc --all) + 1))
