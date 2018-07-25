@@ -37,7 +37,7 @@ fi
 
 # Enviroment stuffs
 DEFCONFIG=${DEVICE}_defconfig
-CLANG_FOLDER=$HOME/toolchains/flash-clang-7.x/
+CLANG_FOLDER=$HOME/toolchains/own-clang-7.x/
 CLANG=$CLANG_FOLDER/bin/clang
 CLANG_VERSION=$($CLANG --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
 
