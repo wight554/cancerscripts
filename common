@@ -49,3 +49,6 @@ zip_ak2(){
 function enforce_value() {
     [[ "${#}" -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
 }
+
+# Add trap for catching Ctrl-C
+trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
