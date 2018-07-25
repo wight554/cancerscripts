@@ -15,6 +15,10 @@ bldblu=${txtbld}$(tput setaf 4) #  blue
 bldcya=${txtbld}$(tput setaf 6) #  cyan
 txtrst=$(tput sgr0)             # Reset
 
+# Export username for android props
+export BACKUPUSER=$USER
+export USER=$KBUILD_BUILD_USER
+
 ROM="$1"
 DEVICE="$2"
 GDRIVE="$3"
@@ -127,6 +131,9 @@ pkill java
 
 # Back to scripts folder
 cd $CURRENT_PATH
+
+# Bring back default username
+export USER=$BACKUPUSER
 
 # Shutdown the system if required by the user
 if [ "$SHUTDOWN" == "off" ]
