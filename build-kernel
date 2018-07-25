@@ -30,9 +30,15 @@ then
 fi
 
 # Check the toolchain
-if [[ -z $TOOLCHAIN && $DEVICE != "kenzo" ]] 
+if [ -z $TOOLCHAIN ]
 then
   echo "Choose toolchain to proceed!"; cd $SCRIPTS; return 0;
+fi
+
+# Check the toolchain
+if [[ $TOOLCHAIN == "clang" && $DEVICE == "kenzo" ]]
+then
+  echo "No clang for 3.10 plebs!"; cd $SCRIPTS; return 0;
 fi
 
 # Enviroment stuffs
@@ -43,7 +49,7 @@ CLANG_VERSION=$($CLANG --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | se
 
 # Use GCC 7 for kenzo (coz kanzur)
 if [ "$DEVICE" == "kenzo" ]
-then 
+then
   GCC_FOLDER=$HOME/toolchains/linaro-gcc-7.x
 else
   GCC_FOLDER=$HOME/toolchains/gnu-gcc-8.x
@@ -67,13 +73,13 @@ fi
 # Start madness
 cd $KERNEL_DIR
 BUILD_START=$(date +"%s")
-make_defconfig() 
+make_defconfig()
 {
   rm -rf $BUILD_DIR/arch/arm64/boot/dts/qcom/
   echo -e ${LGR} "############# Generating defconfig ##############${NC}"
   make -s ARCH=arm64 O=$BUILD_DIR $DEFCONFIG $JOBS_FLAG
 }
-compile() 
+compile()
 {
   echo -e ${LGR} "############### Compiling kernel ################${NC}"
   # Kenzo runs GCC only so no need to type gcc
@@ -96,7 +102,7 @@ compile()
   fi
 
 }
-ramdisk() 
+ramdisk()
 {
   cd $BUILD_DIR
   COMPILED_IMAGE=arch/arm64/boot/Image.gz-dtb
