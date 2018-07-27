@@ -56,7 +56,7 @@ CC=${GCC%gcc}
 # Optimizations (clang only)
 if [ "$TOOLCHAIN" == "clang" ]
 then
-  KCFLAGS="-O3 -mllvm -polly \
+  KCFLAGS="-mllvm -polly \
 		       -mllvm -polly-run-dce \
 		       -mllvm -polly-run-inliner \
 		       -mllvm -polly-opt-fusion=max \
