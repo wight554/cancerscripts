@@ -1,63 +1,42 @@
 #!/bin/bash
 
-# Setup compiler stuff
-export USE_CCACHE=1
-/usr/bin/ccache -M 50G
+# Common script
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Colorize and add text parameters
-red=$(tput setaf 1)             #  red
-grn=$(tput setaf 2)             #  green
-cya=$(tput setaf 6)             #  cyan
-txtbld=$(tput bold)             # Bold
-bldred=${txtbld}$(tput setaf 1) #  red
-bldgrn=${txtbld}$(tput setaf 2) #  green
-bldblu=${txtbld}$(tput setaf 4) #  blue
-bldcya=${txtbld}$(tput setaf 6) #  cyan
-txtrst=$(tput sgr0)             # Reset
-
-# Export username for android props
-export BACKUPUSER=$USER
-export USER=$KBUILD_BUILD_USER
-
+# Input
 ROM="$1"
 DEVICE="$2"
 GDRIVE="$3"
 SHUTDOWN="$4"
 
-CURRENT_PATH=$PWD
+# Build dirs
 ROM_PATH=$HOME/$ROM
 
 # Start tracking time
-echo -e ${bldblu}
-echo -e "---------------------------------------"
-echo -e "SCRIPT STARTING AT $(date +%D\ %r)"
-echo -e "---------------------------------------"
-echo -e ${txtrst}
-
 START=$(date +%s)
 
 # Check ROM
 if [ "$ROM" == "abc" ]
 then
-  echo -e "Let's build karntest ROM... ${txtrst}"
+  info "Let's build karntest ROM..."
 elif [ "$ROM" == "aosip" ]
 then
-  echo -e "Let's build weird birb ROM.. ${txtrst}"
+  info "Let's build weird birb ROM.."
 else
-  echo "Choose AOSIP or ABC to proceed!"; cd $CURRENT_PATH; return 0;
+  die "Choose AOSIP or ABC to proceed!"
 fi
 
 # Setup environment
-echo -e "${bldblu}Setting up build environment ${txtrst}"
+info "${bldblu}Setting up build environment"
 cd $ROM_PATH
 . build/envsetup.sh
 
 # Set the device
 if [ -z $DEVICE ]
 then
-  echo "Choose device to proceed!"; cd $CURRENT_PATH; return 0;
+  die "Choose device to proceed!"
 fi
-echo -e "Setting up the device... ${txtrst}"
+info "Setting up the device..."
 if [ "$ROM" == "abc" ]
 then
   breakfast "$DEVICE-userdebug"
@@ -75,29 +54,30 @@ then
   ROMNAME=AOSiP*$DEVICE*.zip
 fi
 
+# Rom zip name
 ROMZIP=$ROM_PATH/out/target/product/$DEVICE/$ROMNAME
 
 # Always do installclean
 make installclean;
 
 #  Start compilation
-echo -e "${bldblu}Compiling $ROM for $DEVICE and saving a build log file ${txtrst}"
+info "Compiling $ROM for $DEVICE and saving a build log file"
 if [ "$ROM" == "abc" ]
 then
-  mka bacon 2>&1 | tee build.log;
+  mka bacon 2>&1 | tee $HOME/logs/buildrom.log;
 elif [ "$ROM" == "aosip" ]
 then
-  time mka kronic 2>&1 | tee build.log;
+  time mka kronic 2>&1 | tee $HOME/logs/build.log;
 fi
 
 # If the above was successful
 if [ `ls $ROMZIP 2>/dev/null | wc -l` != "0" ]
 then
-  BUILD_RESULT="Build successful"
+  success "Build successful"
   # Google Drive upload
   if [ "$GDRIVE" == "gdrive" ]
   then
-    echo -e "${bldblu}Uploading build to Google Drive ${txtrst}"
+    info "Uploading build to Google Drive"
     gdrive upload $ROMZIP
     # Upload changelog if ABC
     if [ "$ROM" == "abc" ]
@@ -107,36 +87,18 @@ then
   fi
 # If the build failed
 else
-  BUILD_RESULT="Build failed"
+  failed "Build failed"
 fi
-
-# back to root dir
-cd $ROOT_PATH
 
 # Stop tracking time
 END=$(date +%s)
-echo -e ${bldblu}
-echo -e "-------------------------------------"
-echo -e "SCRIPT ENDING AT $(date +%D\ %r)"
-echo -e ""
-echo -e "${BUILD_RESULT}!"
-echo -e "TIME: $(echo $((${END}-${START})) | awk '{print int($1/60)" MINUTES AND "int($1%60)" SECONDS"}')"
-echo -e "-------------------------------------"
-echo -e ${txtrst}
-
-BUILDTIME="Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
-
-# Kill java if it's hanging on
-pkill java
-
-# Back to scripts folder
-cd $CURRENT_PATH
-
-# Bring back default username
-export USER=$BACKUPUSER
+info "Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
 
 # Shutdown the system if required by the user
 if [ "$SHUTDOWN" == "off" ]
 then
   sudo poweroff
 fi
+
+# Kill java if it's hanging on
+pkill java

@@ -1,44 +1,39 @@
 #!/bin/bash
 
+# Common script
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+
 # Input
 DEVICE="$1"
 TOOLCHAIN="$2"
 GDRIVE="$3"
 
-# Colors
-NC='\033[0m'
-RED='\033[0;31m'
-LGR='\033[1;32m'
-
 # AK2 zip name
 ZIPNAME="PlaceholderKernel-$DEVICE-$(date +'%Y%m%d')"
 
 # Build dirs
-SCRIPTS=$PWD
 KERNEL_DIR=$HOME/linux/$DEVICE
 AK2_DIR=$HOME/linux/ak2-$DEVICE
 BUILD_DIR=$HOME/linux/build-$DEVICE
 
-# MAKE THREADS
-THREADS=$(($(nproc --all) + 1))
-JOBS_FLAG="-j${THREADS}"
+START=$(date +%s)
 
 # Check the device
 if [ -z $DEVICE ]
 then
-  echo "Choose device to proceed!"; cd $SCRIPTS; return 0;
+  die "Choose device to proceed!"
 fi
 
 # Check the toolchain
 if [ -z $TOOLCHAIN ]
 then
-  echo "Choose toolchain to proceed!"; cd $SCRIPTS; return 0;
+  die "Choose toolchain to proceed!"
 fi
 
 # Check the toolchain
 if [[ $TOOLCHAIN == "clang" && $DEVICE == "kenzo" ]]
 then
-  echo "No clang for 3.10 plebs!"; cd $SCRIPTS; return 0;
+  die "No clang for 3.10 plebs!"
 fi
 
 # Enviroment stuffs
@@ -72,16 +67,15 @@ fi
 
 # Start madness
 cd $KERNEL_DIR
-BUILD_START=$(date +"%s")
-make_defconfig()
+defconfig()
 {
   rm -rf $BUILD_DIR/arch/arm64/boot/dts/qcom/
-  echo -e ${LGR} "############# Generating defconfig ##############${NC}"
+  info "Generating defconfig"
   make -s ARCH=arm64 O=$BUILD_DIR $DEFCONFIG $JOBS_FLAG
 }
-compile()
+kernel()
 {
-  echo -e ${LGR} "############### Compiling kernel ################${NC}"
+  info "Compiling kernel"
   # Kenzo runs GCC only so no need to type gcc
   if [ "$TOOLCHAIN" == "clang" ]
   then
@@ -100,7 +94,6 @@ compile()
 		CROSS_COMPILE=$CC \
 		Image.gz-dtb
   fi
-
 }
 ramdisk()
 {
@@ -110,24 +103,21 @@ ramdisk()
     mv -f $COMPILED_IMAGE $AK2_DIR/Image.gz-dtb
     cd $AK2_DIR
     zip -r9 $ZIPNAME.zip * --exclude=*README* --exclude=*.zip  $ZIPNAME.zip
-    BUILD_END=$(date +"%s")
-    DIFF=$(($BUILD_END - $BUILD_START))
     # Gdrive upload is simple af
     if [ "$GDRIVE" == "gdrive" ]
     then
       gdrive upload $ZIPNAME.zip
     fi
-    echo -e ${LGR} "#################################################"
-    echo -e ${LGR} "############### Build competed! #################"
-    echo -e ${LGR} "###### Duration: $(($DIFF / 60)) minutes and $(($DIFF % 60)) seconds. ######${NC}"
-    echo -e ${LGR} "#################################################${NC}"
+    success "Build competed!"
   else
-    echo -e ${RED} "#################################################"
-    echo -e ${RED} "############### Build failed, RIP ###############"
-    echo -e ${RED} "#################################################${NC}"
+    failed "Build failed!"
   fi
+  # Stop tracking time
+  END=$(date +%s)
+  info "Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
 }
-make_defconfig
-compile
+
+# Run them all
+defconfig
+kernel | tee $HOME/logs/buildkernel.log
 ramdisk
-cd $SCRIPTS
