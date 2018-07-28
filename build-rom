@@ -104,5 +104,5 @@ info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" mi
 # Shutdown the system if required by the user
 if [[ -n "${POWEROFF}" ]]
 then
-  sudo poweroff
+  poweroff
 fi
