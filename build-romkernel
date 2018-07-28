@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Start tracking time
+START="$(date +%s)"
+
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
@@ -45,9 +48,6 @@ COMPILED_IMAGE="${BUILD_PATH}/kernel"
 AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
-# Start tracking time
-START="$(date +%s)"
-
 # Setup environment
 info "Setting up build environment"
 cd "${ROM_PATH}"
@@ -71,12 +71,10 @@ mka bootimage 2>&1 | tee "${HOME}/logs/buildromkernel.log"
 # If the above was successful
 if [[ -f "${BUILD_PATH}/boot.img" ]]
 then
-  success "Build successful"
   # Go anykernel
   if [[ -n "${ANYKERNEL}" ]]
   then
     info "Adding kernel to AnyKernel2"
-    # zip kernel to ak2
     zip_ak2
   fi
   # Google Drive upload
@@ -90,6 +88,7 @@ then
       gdrive upload "${BUILD_PATH}/boot.img"
     fi
   fi
+  success "Build successful"
 # If the build failed
 else
   failed "Build failed"

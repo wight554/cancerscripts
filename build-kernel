@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Start tracking time
+START="$(date +%s)"
+
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
@@ -50,13 +53,8 @@ BUILD_DIR="${HOME}/linux/build-${DEVICE}"
 AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
-START="$(date +%s)"
-
-# Enviroment stuffs
+# Defconfig
 DEFCONFIG="${DEVICE}_defconfig"
-CLANG_FOLDER="${HOME}/toolchains/own-clang-7.x/"
-CLANG="${CLANG_FOLDER}/bin/clang"
-CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
 
 # Use GCC 7 for kenzo (coz kanzur)
 if [ "${DEVICE}" == "kenzo" ]
@@ -66,8 +64,14 @@ else
   GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
 fi
 
+# GCC paths variables
 GCC="$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
 CC="${GCC%gcc}"
+
+# Clang paths variables
+CLANG_FOLDER="${HOME}/toolchains/own-clang-7.x/"
+CLANG="${CLANG_FOLDER}/bin/clang"
+CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
 
 # Optimizations (clang only)
 if [ "${TOOLCHAIN}" == "clang" ]
@@ -83,16 +87,19 @@ fi
 
 # Start madness
 cd "${KERNEL_DIR}"
+
+# Generate defconfig
 defconfig()
 {
   rm -rf "${BUILD_DIR}/arch/arm64/boot/dts/qcom/"
   info "Generating defconfig"
   make -s ARCH="arm64" O="${BUILD_DIR}" "${DEFCONFIG}" "${JOBS_FLAG}"
 }
+
+# Build kernel
 kernel()
 {
   info "Compiling kernel"
-  # Kenzo runs GCC only so no need to type gcc
   if [ "${TOOLCHAIN}" == "clang" ]
   then
     make O="${BUILD_DIR}" "${JOBS_FLAG}" \
@@ -111,29 +118,33 @@ kernel()
 		Image.gz-dtb
   fi
 }
+
+# Push kernel image and ramdisk to anykernel zip
 ramdisk()
 {
   cd "${BUILD_DIR}"
   COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
   if [[ -f "${COMPILED_IMAGE}" ]]
   then
-    # zip kernel to ak2
+    info "Adding kernel to AnyKernel2"
     zip_ak2
-    # Gdrive upload is simple af
+    # Google Drive upload
     if [[ -n "${GDRIVE}" ]]
     then
+      info "Uploading zip to Google Drive"
       gdrive upload "${ZIPNAME}"
     fi
     success "Build competed!"
   else
     failed "Build failed!"
   fi
-  # Stop tracking time
-  END="$(date +%s)"
-  info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
 }
 
 # Run them all
 defconfig
 kernel | tee "${HOME}/logs/buildkernel.log"
 ramdisk
+
+# Stop tracking time
+END="$(date +%s)"
+info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"

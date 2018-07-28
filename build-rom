@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Start tracking time
+START="$(date +%s)"
+
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
@@ -39,8 +42,14 @@ fi
 # Build dirs
 ROM_PATH="${HOME}/${ROM}"
 
-# Start tracking time
-START="$(date +%s)"
+# ROM zip name
+if [ "${ROM}" == "abc" ]
+then
+  ROMZIP=${ROM_PATH}/out/target/product/${DEVICE}/ABC-*${DEVICE}*$(date +'%Y%m%d').zip
+elif [ "${ROM}" == "aosip" ]
+then
+  ROMZIP=${ROM_PATH}/out/target/product/${DEVICE}/AOSiP*${DEVICE}*.zip
+fi
 
 # Setup environment
 info "Setting up build environment"
@@ -57,19 +66,7 @@ then
   lunch "aosip_${DEVICE}-userdebug"
 fi
 
-# ROM related stuffs
-if [ "${ROM}" == "abc" ]
-then
-  ROMNAME=ABC-*${DEVICE}*$(date +'%Y%m%d').zip
-elif [ "${ROM}" == "aosip" ]
-then
-  ROMNAME=AOSiP*${DEVICE}*.zip
-fi
-
-# Rom zip name
-ROMZIP="${ROM_PATH}/out/target/product/${DEVICE}/${ROMNAME}"
-
-# Always do installclean
+# Always go installclean
 make installclean
 
 #  Start compilation
@@ -85,7 +82,6 @@ fi
 # If the above was successful
 if [[ -f "${ROMZIP}" ]]
 then
-  success "Build successful"
   # Google Drive upload
   if [[ -n "${GDRIVE}" ]]
   then
@@ -97,10 +93,14 @@ then
       gdrive upload ${ROM_PATH}/out/target/product/${DEVICE}/Changelog-*${DEVICE}*$(date +'%Y%m%d').txt
     fi
   fi
+  success "Build successful"
 # If the build failed
 else
   failed "Build failed"
 fi
+
+# Kill java if it's hanging on
+pkill java
 
 # Stop tracking time
 END="$(date +%s)"
@@ -111,6 +111,3 @@ if [[ -n "${POWEROFF}" ]]
 then
   sudo poweroff
 fi
-
-# Kill java if it's hanging on
-pkill java

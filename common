@@ -17,7 +17,7 @@ YLW="\\033[01;33m"
 # KBUILD_BUILD_USER is set in .bashrc
 export USER="${KBUILD_BUILD_USER}"
 
-# MAKE THREADS
+# Make threads
 THREADS="$(($(nproc --all) + 1))"
 JOBS_FLAG="-j${THREADS}"
 
