@@ -42,15 +42,6 @@ fi
 # Build dirs
 ROM_PATH="${HOME}/${ROM}"
 
-# ROM zip name
-if [ "${ROM}" == "abc" ]
-then
-  ROMZIP=${ROM_PATH}/out/target/product/${DEVICE}/ABC-*${DEVICE}*$(date +'%Y%m%d').zip
-elif [ "${ROM}" == "aosip" ]
-then
-  ROMZIP=${ROM_PATH}/out/target/product/${DEVICE}/AOSiP*${DEVICE}*.zip
-fi
-
 # Setup environment
 info "Setting up build environment"
 cd "${ROM_PATH}"
@@ -79,6 +70,10 @@ then
   time mka kronic 2>&1 | tee "${HOME}/logs/build.log"
 fi
 
+# Output files
+ROMZIP="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -iname "${ROM}*$(date +'%Y%m%d')*.zip" )"
+CHANGELOG="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -iname "Changelog*$(date +'%Y%m%d')*.txt" )"
+
 # If the above was successful
 if [[ -f "${ROMZIP}" ]]
 then
@@ -90,7 +85,7 @@ then
     # Upload changelog if ABC
     if [ "${ROM}" == "abc" ]
     then
-      gdrive upload ${ROM_PATH}/out/target/product/${DEVICE}/Changelog-*${DEVICE}*$(date +'%Y%m%d').txt
+      gdrive upload "${CHANGELOG}"
     fi
   fi
   success "Build successful"
