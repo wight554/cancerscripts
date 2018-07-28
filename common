@@ -17,9 +17,11 @@ RST="\\033[0m"
 # KBUILD_BUILD_USER is set in .bashrc
 export USER="${KBUILD_BUILD_USER}"
 
+# Current date for all scripts
+DATE="$(date +'%Y%m%d')"
 
 # Shellcheck, are you satisfied now?
-export CCACHE JOBS_FLAG
+export CCACHE JOBS_FLAG DATE
 
 # Make threads
 THREADS="$(($(nproc --all) + 1))"
@@ -50,6 +52,21 @@ zip_ak2(){
     mv -f "${COMPILED_IMAGE}" "${AK2_PATH}/Image.gz-dtb"
     cd "${AK2_PATH}" || die "Anykernel2 folder doesn't exist!"
     zip -r9 "${ZIPNAME}" ./* -x "README.md" -x "./*.zip"
+}
+
+# Uploads a document to a Telegram chat
+# Token should be exported from .bashrc
+if [[ -z "${TOKEN}" ]]; then
+    die "How can u use telegram bot without token?"
+fi
+if [[ -z "${CHATID}" ]]; then
+    die "Who you gonna call?"
+fi
+telegram_notify() {
+curl -s https://api.telegram.org/bot"${TOKEN}"/sendMessage -d text="${1}" -d chat_id="${CHATID}" >> /dev/null
+}
+telegram_upload() {
+curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" -F chat_id="${CHATID}" >> /dev/null
 }
 
 # Enforces the value needed for two-part flags

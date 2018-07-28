@@ -46,7 +46,8 @@ export COMPILED_IMAGE="${BUILD_PATH}/kernel"
 
 # Anykernel
 export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
-ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
+KERNEL_NAME="PlaceholderKernel"
+ZIPNAME="${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
 
 # Setup environment
 info "Setting up build environment"

@@ -20,6 +20,9 @@ while [[ "${#}" -ge 1 ]]; do
         "-g"|"--gdrive")
             GDRIVE=true ;;
 
+        "-u"|"--upload")
+            UPLOAD=true ;;
+
         "-c"|"--clean")
             CLEAN=true ;;
 
@@ -54,7 +57,8 @@ BUILD_DIR="${HOME}/linux/build-${DEVICE}"
 
 # Anykernel
 export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
-ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
+KERNEL_NAME="PlaceholderKernel"
+ZIPNAME="${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
 
 # Defconfig
 DEFCONFIG="${DEVICE}_defconfig"
@@ -156,6 +160,13 @@ ramdisk()
 defconfig
 kernel
 ramdisk
+
+# Upload kernel zip to Telegram chat if requested
+if [[ -n "${UPLOAD}" ]]
+then
+  telegram_notify "${KERNEL_NAME} ${DATE} for ${DEVICE} is ready, uploading!"
+  telegram_upload "${ZIPNAME}"
+fi
 
 # Stop tracking time
 END="$(date +%s)"

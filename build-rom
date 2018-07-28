@@ -88,8 +88,8 @@ then
 fi
 
 # Output files
-ROMZIP="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -iname "${ROM}*$(date +'%Y%m%d')*.zip" )"
-CHANGELOG="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -iname "Changelog*$(date +'%Y%m%d')*.txt" )"
+ROMZIP="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -iname "${ROM}*${DATE}*.zip" )"
+CHANGELOG="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -iname "Changelog*${DATE}*.txt" )"
 
 # If the above was successful
 if [[ -f "${ROMZIP}" ]]
