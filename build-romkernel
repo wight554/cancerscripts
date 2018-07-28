@@ -11,11 +11,12 @@ ANYKERNEL="${4}"
 
 # Build dirs
 ROM_PATH="${HOME}/${ROM}"
-AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
+COMPILED_IMAGE="${BUILD_PATH}/kernel"
 
-# AK2 zip name
-ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d')"
+# Anykernel
+AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
+ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
 # Start tracking time
 START="$(date +%s)"
@@ -66,9 +67,8 @@ then
   if [ "${ANYKERNEL}" == "ak" ]
   then
     info "Adding kernel to AnyKernel2"
-    mv -f "${BUILD_PATH}/kernel" "${AK2_PATH}/Image.gz-dtb"
-    cd "${AK2_PATH}"
-    zip -r9 "${ZIPNAME}.zip" ./* --exclude="*README*" --exclude="*.zip"  "${ZIPNAME}.zip"
+    # zip kernel to ak2
+    zip_ak2
   fi
   # Google Drive upload
   if [ "${GDRIVE}" == "gdrive" ]
@@ -76,7 +76,7 @@ then
     info "Uploading stuffs to Google Drive"
     if [ "${ANYKERNEL}" == "ak" ]
     then
-      gdrive upload "${AK2_PATH}/${ZIPNAME}.zip"
+      gdrive upload "${AK2_PATH}/${ZIPNAME}"
     else
       gdrive upload "${BUILD_PATH}/boot.img"
     fi

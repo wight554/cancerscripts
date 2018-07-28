@@ -37,3 +37,10 @@ success() { echo "${GRN}${1}${RST}" 1>&2; }
 
 # Prints a failed message in bold blinking red
 failed() { echo "${BLINK_RED}${1}${RST}" 1>&2; }
+
+# Function for zipping Anykernel2
+zip_ak2(){
+    mv -f "${COMPILED_IMAGE}" "${AK2_PATH}/Image.gz-dtb"
+    cd "${AK2_PATH}"
+    zip -r9 "${ZIPNAME}" ./* -x "README.md" -x "./*.zip"
+}

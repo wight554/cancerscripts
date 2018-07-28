@@ -8,13 +8,13 @@ DEVICE="${1}"
 TOOLCHAIN="${2}"
 GDRIVE="${3}"
 
-# AK2 zip name
-ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d')"
-
 # Build dirs
 KERNEL_DIR="${HOME}/linux/${DEVICE}"
-AK2_DIR="${HOME}/linux/ak2-${DEVICE}"
 BUILD_DIR="${HOME}/linux/build-${DEVICE}"
+
+# Anykernel
+AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
+ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
 START="$(date +%s)"
 
@@ -101,13 +101,12 @@ ramdisk()
   COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
   if [[ -f "${COMPILED_IMAGE}" ]]
   then
-    mv -f "${COMPILED_IMAGE}" "${AK2_DIR}/Image.gz-dtb"
-    cd "${AK2_DIR}"
-    zip -r9 "${ZIPNAME}.zip" ./* --exclude=*README* --exclude=*.zip  "${ZIPNAME}.zip"
+    # zip kernel to ak2
+    zip_ak2
     # Gdrive upload is simple af
     if [ "${GDRIVE}" == "gdrive" ]
     then
-      gdrive upload "${ZIPNAME}.zip"
+      gdrive upload "${ZIPNAME}"
     fi
     success "Build competed!"
   else
