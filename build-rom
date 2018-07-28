@@ -20,6 +20,12 @@ while [[ "${#}" -ge 1 ]]; do
         "-g"|"--gdrive")
             GDRIVE=true ;;
 
+        "-s"|"--sync")
+            SYNC=true ;;
+
+        "-c"|"--clean")
+            CLEAN=true ;;
+
         "-off"|"--poweroff")
             POWEROFF=true ;;
 
@@ -57,8 +63,19 @@ then
   lunch "aosip_${DEVICE}-userdebug"
 fi
 
-# Always go installclean
-make installclean
+# Sync repo if needed
+if [[ -n "${SYNC}" ]]
+then
+  repo sync
+fi
+
+# Go clean if needed, otherwise installclean
+if [[ -n "${CLEAN}" ]]
+then
+  make clobber
+else
+  make installclean
+fi
 
 #  Start compilation
 info "Compiling ${ROM} for ${DEVICE} and saving a build log file"
