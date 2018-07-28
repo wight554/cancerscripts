@@ -44,8 +44,8 @@ ROM_PATH="${HOME}/${ROM}"
 
 # Setup environment
 info "Setting up build environment"
-cd "${ROM_PATH}"
-. build/envsetup.sh
+cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
+source "${ROM_PATH}/build/envsetup.sh"
 
 # Set the device
 info "Setting up the device..."

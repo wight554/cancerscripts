@@ -7,11 +7,11 @@ export USE_CCACHE=1
 # Colors
 BLINK_RED="\\033[05;31m"
 BLUE="\\033[01;34m"
-BOLD="\\033[1m"
+# BOLD="\\033[1m"
 GRN="\\033[01;32m"
 RED="\\033[01;31m"
 RST="\\033[0m"
-YLW="\\033[01;33m"
+# YLW="\\033[01;33m"
 
 # Export username for android props
 # KBUILD_BUILD_USER is set in .bashrc
@@ -41,7 +41,7 @@ failed() { echo "${BLINK_RED}${1}${RST}" 1>&2; }
 # Function for zipping Anykernel2
 zip_ak2(){
     mv -f "${COMPILED_IMAGE}" "${AK2_PATH}/Image.gz-dtb"
-    cd "${AK2_PATH}"
+    cd "${AK2_PATH}" || die "Anykernel2 folder doesn't exist!"
     zip -r9 "${ZIPNAME}" ./* -x "README.md" -x "./*.zip"
 }
 

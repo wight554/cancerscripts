@@ -86,7 +86,7 @@ then
 fi
 
 # Start madness
-cd "${KERNEL_DIR}"
+cd "${KERNEL_DIR}" || die "Kernel die doesn't exist!"
 
 # Generate defconfig
 defconfig()
@@ -122,7 +122,7 @@ kernel()
 # Push kernel image and ramdisk to anykernel zip
 ramdisk()
 {
-  cd "${BUILD_DIR}"
+  cd "${BUILD_DIR}" || info "Out dir doesn't exist, let's create one!"; mkdir -p "${BUILD_DIR}"; cd "${BUILD_DIR}" || die "Someting went wrong!"
   COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
   if [[ -f "${COMPILED_IMAGE}" ]]
   then
