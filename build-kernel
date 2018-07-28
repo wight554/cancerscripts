@@ -142,7 +142,7 @@ ramdisk()
 
 # Run them all
 defconfig
-kernel | tee "${HOME}/logs/buildkernel.log"
+kernel
 ramdisk
 
 # Stop tracking time
