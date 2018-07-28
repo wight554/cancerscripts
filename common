@@ -44,3 +44,8 @@ zip_ak2(){
     cd "${AK2_PATH}"
     zip -r9 "${ZIPNAME}" ./* -x "README.md" -x "./*.zip"
 }
+
+# Enforces the value needed for two-part flags
+function enforce_value() {
+    [[ "${#}" -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
+}

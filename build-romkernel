@@ -3,11 +3,38 @@
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Input
-ROM="${1}"
-DEVICE="${2}"
-GDRIVE="${3}"
-ANYKERNEL="${4}"
+# Parameters
+while [[ "${#}" -ge 1 ]]; do
+    case "${1}" in
+        "-r"|"--rom")
+            shift && enforce_value "${@}"
+            ROM="${1}" ;;
+
+        "-d"|"--device")
+            shift && enforce_value "${@}"
+            DEVICE="${1}" ;;
+
+        "-g"|"--gdrive")
+            GDRIVE=true ;;
+
+        "-ak2"|"--anykernel2")
+            ANYKERNEL=true ;;
+
+        *) die "Invalid parameter specified!" ;;
+    esac
+
+    shift
+done
+
+# Default parameters
+[[ -z "${ROM}" ]] && ROM="abc"
+[[ -z "${DEVICE}" ]] && DEVICE="chiron"
+
+# Check ROM
+if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
+then
+  die "Only ABC and AOSIP are supported!"
+fi
 
 # Build dirs
 ROM_PATH="${HOME}/${ROM}"
@@ -20,23 +47,6 @@ ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
 # Start tracking time
 START="$(date +%s)"
-
-# Check ROM
-if [ "${ROM}" == "abc" ]
-then
-  info "Let's build bootimage karntest ROM..."
-elif [ "${ROM}" == "aosip" ]
-then
-  info "Let's build bootimage for weird birb ROM.."
-else
-  die "Choose AOSIP or ABC to proceed!"
-fi
-
-# Check device
-if [ -z "${DEVICE}" ]
-then
-  die "Choose device to proceed!"
-fi
 
 # Setup environment
 info "Setting up build environment"
@@ -58,23 +68,22 @@ info "Starting build kernel for ${DEVICE} and saving a build log file"
 rm -f "${BUILD_PATH}/{boot.img,kernel}"
 mka bootimage 2>&1 | tee "${HOME}/logs/buildromkernel.log"
 
-
 # If the above was successful
 if [[ -f "${BUILD_PATH}/boot.img" ]]
 then
   success "Build successful"
   # Go anykernel
-  if [ "${ANYKERNEL}" == "ak" ]
+  if [[ -n "${ANYKERNEL}" ]]
   then
     info "Adding kernel to AnyKernel2"
     # zip kernel to ak2
     zip_ak2
   fi
   # Google Drive upload
-  if [ "${GDRIVE}" == "gdrive" ]
+  if [[ -n "${GDRIVE}" ]]
   then
     info "Uploading stuffs to Google Drive"
-    if [ "${ANYKERNEL}" == "ak" ]
+    if [[ -n "${ANYKERNEL}" ]]
     then
       gdrive upload "${AK2_PATH}/${ZIPNAME}"
     else

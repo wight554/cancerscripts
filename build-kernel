@@ -3,10 +3,44 @@
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Input
-DEVICE="${1}"
-TOOLCHAIN="${2}"
-GDRIVE="${3}"
+# Parameters
+while [[ "${#}" -ge 1 ]]; do
+    case "${1}" in
+        "-d"|"--device")
+            shift && enforce_value "${@}"
+            DEVICE="${1}" ;;
+
+        "-t"|"--toolchain")
+            shift && enforce_value "${@}"
+            TOOLCHAIN="${1}" ;;
+
+        "-g"|"--gdrive")
+            GDRIVE=true ;;
+
+        *) die "Invalid parameter specified!" ;;
+    esac
+
+    shift
+done
+
+# Default parameters
+[[ -z "${DEVICE}" ]] && DEVICE="chiron"
+[[ -z "${TOOLCHAIN}" ]] && TOOLCHAIN="clang"
+
+# Check TC
+if [[ "${TOOLCHAIN}" != "clang" && "${TOOLCHAIN}" != "gcc" ]]
+then
+  die "Dafuq u wanna build with?"
+fi
+
+# Kenzo can not into clang
+if [[ "${TOOLCHAIN}" == "clang" && "${DEVICE}" == "kenzo" ]]
+then
+  die "No clang for 3.10 plebs!"
+elif [[ -z "${TOOLCHAIN}" && "${DEVICE}" == "kenzo" ]]
+then
+  TOOLCHAIN="gcc"
+fi
 
 # Build dirs
 KERNEL_DIR="${HOME}/linux/${DEVICE}"
@@ -17,24 +51,6 @@ AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
 START="$(date +%s)"
-
-# Check the device
-if [ -z "${DEVICE}" ]
-then
-  die "Choose device to proceed!"
-fi
-
-# Check the toolchain
-if [ -z "${TOOLCHAIN}" ]
-then
-  die "Choose toolchain to proceed!"
-fi
-
-# Check the toolchain
-if [[ "${TOOLCHAIN}" == "clang" && "${DEVICE}" == "kenzo" ]]
-then
-  die "No clang for 3.10 plebs!"
-fi
 
 # Enviroment stuffs
 DEFCONFIG="${DEVICE}_defconfig"
@@ -104,7 +120,7 @@ ramdisk()
     # zip kernel to ak2
     zip_ak2
     # Gdrive upload is simple af
-    if [ "${GDRIVE}" == "gdrive" ]
+    if [[ -n "${GDRIVE}" ]]
     then
       gdrive upload "${ZIPNAME}"
     fi

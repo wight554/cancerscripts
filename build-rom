@@ -3,11 +3,38 @@
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Input
-ROM="${1}"
-DEVICE="${2}"
-GDRIVE="${3}"
-SHUTDOWN="${4}"
+# Parameters
+while [[ "${#}" -ge 1 ]]; do
+    case "${1}" in
+        "-r"|"--rom")
+            shift && enforce_value "${@}"
+            ROM="${1}" ;;
+
+        "-d"|"--device")
+            shift && enforce_value "${@}"
+            DEVICE="${1}" ;;
+
+        "-g"|"--gdrive")
+            GDRIVE=true ;;
+
+        "-off"|"--poweroff")
+            POWEROFF=true ;;
+
+        *) die "Invalid parameter specified!" ;;
+    esac
+
+    shift
+done
+
+# Default parameters
+[[ -z "${ROM}" ]] && ROM="abc"
+[[ -z "${DEVICE}" ]] && DEVICE="chiron"
+
+# Check ROM
+if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
+then
+  die "Only ABC and AOSIP are supported!"
+fi
 
 # Build dirs
 ROM_PATH="${HOME}/${ROM}"
@@ -15,27 +42,12 @@ ROM_PATH="${HOME}/${ROM}"
 # Start tracking time
 START="$(date +%s)"
 
-# Check ROM
-if [ "${ROM}" == "abc" ]
-then
-  info "Let's build karntest ROM..."
-elif [ "${ROM}" == "aosip" ]
-then
-  info "Let's build weird birb ROM.."
-else
-  die "Choose AOSIP or ABC to proceed!"
-fi
-
 # Setup environment
 info "Setting up build environment"
 cd "${ROM_PATH}"
 . build/envsetup.sh
 
 # Set the device
-if [ -z "${DEVICE}" ]
-then
-  die "Choose device to proceed!"
-fi
 info "Setting up the device..."
 if [ "${ROM}" == "abc" ]
 then
@@ -75,7 +87,7 @@ if [[ -f "${ROMZIP}" ]]
 then
   success "Build successful"
   # Google Drive upload
-  if [ "${GDRIVE}" == "gdrive" ]
+  if [[ -n "${GDRIVE}" ]]
   then
     info "Uploading build to Google Drive"
     gdrive upload "${ROMZIP}"
@@ -95,7 +107,7 @@ END="$(date +%s)"
 info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
 
 # Shutdown the system if required by the user
-if [ "${SHUTDOWN}" == "off" ]
+if [[ -n "${POWEROFF}" ]]
 then
   sudo poweroff
 fi
