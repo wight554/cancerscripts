@@ -4,57 +4,57 @@
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
 # Input
-DEVICE="$1"
-TOOLCHAIN="$2"
-GDRIVE="$3"
+DEVICE="${1}"
+TOOLCHAIN="${2}"
+GDRIVE="${3}"
 
 # AK2 zip name
-ZIPNAME="PlaceholderKernel-$DEVICE-$(date +'%Y%m%d')"
+ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d')"
 
 # Build dirs
-KERNEL_DIR=$HOME/linux/$DEVICE
-AK2_DIR=$HOME/linux/ak2-$DEVICE
-BUILD_DIR=$HOME/linux/build-$DEVICE
+KERNEL_DIR="${HOME}/linux/${DEVICE}"
+AK2_DIR="${HOME}/linux/ak2-${DEVICE}"
+BUILD_DIR="${HOME}/linux/build-${DEVICE}"
 
-START=$(date +%s)
+START="$(date +%s)"
 
 # Check the device
-if [ -z $DEVICE ]
+if [ -z "${DEVICE}" ]
 then
   die "Choose device to proceed!"
 fi
 
 # Check the toolchain
-if [ -z $TOOLCHAIN ]
+if [ -z "${TOOLCHAIN}" ]
 then
   die "Choose toolchain to proceed!"
 fi
 
 # Check the toolchain
-if [[ $TOOLCHAIN == "clang" && $DEVICE == "kenzo" ]]
+if [[ "${TOOLCHAIN}" == "clang" && "${DEVICE}" == "kenzo" ]]
 then
   die "No clang for 3.10 plebs!"
 fi
 
 # Enviroment stuffs
-DEFCONFIG=${DEVICE}_defconfig
-CLANG_FOLDER=$HOME/toolchains/own-clang-7.x/
-CLANG=$CLANG_FOLDER/bin/clang
-CLANG_VERSION=$($CLANG --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+DEFCONFIG="${DEVICE}_defconfig"
+CLANG_FOLDER="${HOME}/toolchains/own-clang-7.x/"
+CLANG="${CLANG_FOLDER}/bin/clang"
+CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
 
 # Use GCC 7 for kenzo (coz kanzur)
-if [ "$DEVICE" == "kenzo" ]
+if [ "${DEVICE}" == "kenzo" ]
 then
-  GCC_FOLDER=$HOME/toolchains/linaro-gcc-7.x
+  GCC_FOLDER="${HOME}/toolchains/linaro-gcc-7.x"
 else
-  GCC_FOLDER=$HOME/toolchains/gnu-gcc-8.x
+  GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
 fi
 
-GCC=$(find $GCC_FOLDER/bin \( -type f -o -type l \) -name '*-gcc' | head -n1)
-CC=${GCC%gcc}
+GCC="$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
+CC="${GCC%gcc}"
 
 # Optimizations (clang only)
-if [ "$TOOLCHAIN" == "clang" ]
+if [ "${TOOLCHAIN}" == "clang" ]
 then
   KCFLAGS="-mllvm -polly \
 		       -mllvm -polly-run-dce \
@@ -66,58 +66,59 @@ then
 fi
 
 # Start madness
-cd $KERNEL_DIR
+cd "${KERNEL_DIR}"
 defconfig()
 {
-  rm -rf $BUILD_DIR/arch/arm64/boot/dts/qcom/
+  rm -rf "${BUILD_DIR}/arch/arm64/boot/dts/qcom/"
   info "Generating defconfig"
-  make -s ARCH=arm64 O=$BUILD_DIR $DEFCONFIG $JOBS_FLAG
+  make -s ARCH="arm64" O="${BUILD_DIR}" "${DEFCONFIG}" "${JOBS_FLAG}"
 }
 kernel()
 {
   info "Compiling kernel"
   # Kenzo runs GCC only so no need to type gcc
-  if [ "$TOOLCHAIN" == "clang" ]
+  if [ "${TOOLCHAIN}" == "clang" ]
   then
-    make O=$BUILD_DIR $JOBS_FLAG \
-		ARCH=arm64 \
-		CC=$CLANG \
-		CLANG_TRIPLE=aarch64-linux-gnu- \
-		KBUILD_COMPILER_STRING="$CLANG_VERSION" \
-		KCFLAGS="$KCFLAGS" \
-		CROSS_COMPILE=$CC \
+    make O="${BUILD_DIR}" "${JOBS_FLAG}" \
+		ARCH="arm64" \
+		CC="${CLANG}" \
+		CLANG_TRIPLE="aarch64-linux-gnu-" \
+		KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
+		KCFLAGS="${KCFLAGS}" \
+		CROSS_COMPILE="${CC}" \
 		Image.gz-dtb
-  elif [ "$TOOLCHAIN" == "gcc" ]
+  elif [ "${TOOLCHAIN}" == "gcc" ]
   then
-    make O=$BUILD_DIR $JOBS_FLAG \
-		ARCH=arm64 \
-		CROSS_COMPILE=$CC \
+    make O="${BUILD_DIR}" "${JOBS_FLAG}" \
+		ARCH="arm64" \
+		CROSS_COMPILE="${CC}" \
 		Image.gz-dtb
   fi
 }
 ramdisk()
 {
-  cd $BUILD_DIR
-  COMPILED_IMAGE=arch/arm64/boot/Image.gz-dtb
-  if [[ -f $COMPILED_IMAGE ]]; then
-    mv -f $COMPILED_IMAGE $AK2_DIR/Image.gz-dtb
-    cd $AK2_DIR
-    zip -r9 $ZIPNAME.zip * --exclude=*README* --exclude=*.zip  $ZIPNAME.zip
+  cd "${BUILD_DIR}"
+  COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
+  if [[ -f "${COMPILED_IMAGE}" ]]
+  then
+    mv -f "${COMPILED_IMAGE}" "${AK2_DIR}/Image.gz-dtb"
+    cd "${AK2_DIR}"
+    zip -r9 "${ZIPNAME}.zip" ./* --exclude=*README* --exclude=*.zip  "${ZIPNAME}.zip"
     # Gdrive upload is simple af
-    if [ "$GDRIVE" == "gdrive" ]
+    if [ "${GDRIVE}" == "gdrive" ]
     then
-      gdrive upload $ZIPNAME.zip
+      gdrive upload "${ZIPNAME}.zip"
     fi
     success "Build competed!"
   else
     failed "Build failed!"
   fi
   # Stop tracking time
-  END=$(date +%s)
-  info "Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
+  END="$(date +%s)"
+  info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
 }
 
 # Run them all
 defconfig
-kernel | tee $HOME/logs/buildkernel.log
+kernel | tee "${HOME}/logs/buildkernel.log"
 ramdisk

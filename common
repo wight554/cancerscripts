@@ -5,20 +5,20 @@ export USE_CCACHE=1
 /usr/bin/ccache -M 50G
 
 # Colors
-BLINK_RED="\033[05;31m"
-BLUE="\033[01;34m"
-BOLD="\033[1m"
-GRN="\033[01;32m"
-RED="\033[01;31m"
-RST="\033[0m"
-YLW="\033[01;33m"
+BLINK_RED="\\033[05;31m"
+BLUE="\\033[01;34m"
+BOLD="\\033[1m"
+GRN="\\033[01;32m"
+RED="\\033[01;31m"
+RST="\\033[0m"
+YLW="\\033[01;33m"
 
 # Export username for android props
 # KBUILD_BUILD_USER is set in .bashrc
-export USER=$KBUILD_BUILD_USER
+export USER="${KBUILD_BUILD_USER}"
 
 # MAKE THREADS
-THREADS=$(($(nproc --all) + 1))
+THREADS="$(($(nproc --all) + 1))"
 JOBS_FLAG="-j${THREADS}"
 
 # Alias for echo to print escape codes

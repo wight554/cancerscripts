@@ -4,22 +4,22 @@
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
 # Input
-ROM="$1"
-DEVICE="$2"
-GDRIVE="$3"
-SHUTDOWN="$4"
+ROM="${1}"
+DEVICE="${2}"
+GDRIVE="${3}"
+SHUTDOWN="${4}"
 
 # Build dirs
-ROM_PATH=$HOME/$ROM
+ROM_PATH="${HOME}/${ROM}"
 
 # Start tracking time
-START=$(date +%s)
+START="$(date +%s)"
 
 # Check ROM
-if [ "$ROM" == "abc" ]
+if [ "${ROM}" == "abc" ]
 then
   info "Let's build karntest ROM..."
-elif [ "$ROM" == "aosip" ]
+elif [ "${ROM}" == "aosip" ]
 then
   info "Let's build weird birb ROM.."
 else
@@ -27,62 +27,62 @@ else
 fi
 
 # Setup environment
-info "${bldblu}Setting up build environment"
-cd $ROM_PATH
+info "Setting up build environment"
+cd "${ROM_PATH}"
 . build/envsetup.sh
 
 # Set the device
-if [ -z $DEVICE ]
+if [ -z "${DEVICE}" ]
 then
   die "Choose device to proceed!"
 fi
 info "Setting up the device..."
-if [ "$ROM" == "abc" ]
+if [ "${ROM}" == "abc" ]
 then
-  breakfast "$DEVICE-userdebug"
-elif [ "$ROM" == "aosip" ]
+  breakfast "${DEVICE}-userdebug"
+elif [ "${ROM}" == "aosip" ]
 then
-  lunch aosip_$DEVICE-userdebug
+  lunch "aosip_${DEVICE}-userdebug"
 fi
 
 # ROM related stuffs
-if [ "$ROM" == "abc" ]
+if [ "${ROM}" == "abc" ]
 then
-  ROMNAME=ABC-*$DEVICE*$(date +'%Y%m%d').zip
-elif [ "$ROM" == "aosip" ]
+  ROMNAME=ABC-*${DEVICE}*$(date +'%Y%m%d').zip
+elif [ "${ROM}" == "aosip" ]
 then
-  ROMNAME=AOSiP*$DEVICE*.zip
+  ROMNAME=AOSiP*${DEVICE}*.zip
 fi
 
 # Rom zip name
-ROMZIP=$ROM_PATH/out/target/product/$DEVICE/$ROMNAME
+ROMZIP="${ROM_PATH}/out/target/product/${DEVICE}/${ROMNAME}"
 
 # Always do installclean
-make installclean;
+make installclean
 
 #  Start compilation
-info "Compiling $ROM for $DEVICE and saving a build log file"
-if [ "$ROM" == "abc" ]
+info "Compiling ${ROM} for ${DEVICE} and saving a build log file"
+if [ "${ROM}" == "abc" ]
 then
-  mka bacon 2>&1 | tee $HOME/logs/buildrom.log;
-elif [ "$ROM" == "aosip" ]
+  mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
+elif [ "${ROM}" == "aosip" ]
 then
-  time mka kronic 2>&1 | tee $HOME/logs/build.log;
+  time mka kronic 2>&1 | tee "${HOME}/logs/build.log"
 fi
 
 # If the above was successful
-if [ `ls $ROMZIP 2>/dev/null | wc -l` != "0" ]
+if [[ -f "${ROMZIP}" ]]
 then
   success "Build successful"
   # Google Drive upload
-  if [ "$GDRIVE" == "gdrive" ]
+  if [ "${GDRIVE}" == "gdrive" ]
   then
     info "Uploading build to Google Drive"
-    gdrive upload $ROMZIP
+    gdrive upload "${ROMZIP}"
     # Upload changelog if ABC
-    if [ "$ROM" == "abc" ]
+    if [ "${ROM}" == "abc" ]
     then
-      gdrive upload $ROM_PATH/out/target/product/$DEVICE/Changelog-*$DEVICE*$(date +'%Y%m%d').txt
+      gdrive upload ${ROM_PATH}/out/target/product/${DEVICE}/Changelog-*${DEVICE}*$(date +'%Y%m%d').txt
     fi
   fi
 # If the build failed
@@ -91,11 +91,11 @@ else
 fi
 
 # Stop tracking time
-END=$(date +%s)
-info "Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
+END="$(date +%s)"
+info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
 
 # Shutdown the system if required by the user
-if [ "$SHUTDOWN" == "off" ]
+if [ "${SHUTDOWN}" == "off" ]
 then
   sudo poweroff
 fi

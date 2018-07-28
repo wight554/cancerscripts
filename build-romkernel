@@ -4,27 +4,27 @@
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
 # Input
-ROM="$1"
-DEVICE="$2"
-GDRIVE="$3"
-ANYKERNEL="$4"
+ROM="${1}"
+DEVICE="${2}"
+GDRIVE="${3}"
+ANYKERNEL="${4}"
 
 # Build dirs
-ROM_PATH=$HOME/$ROM
-AK2_PATH=$HOME/linux/ak2-$DEVICE
-BUILD_PATH=$ROM_PATH/out/target/product/$DEVICE
+ROM_PATH="${HOME}/${ROM}"
+AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
+BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
 
 # AK2 zip name
-ZIPNAME="PlaceholderKernel-$DEVICE-$(date +'%Y%m%d')"
+ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d')"
 
 # Start tracking time
-START=$(date +%s)
+START="$(date +%s)"
 
 # Check ROM
-if [ "$ROM" == "abc" ]
+if [ "${ROM}" == "abc" ]
 then
   info "Let's build bootimage karntest ROM..."
-elif [ "$ROM" == "aosip" ]
+elif [ "${ROM}" == "aosip" ]
 then
   info "Let's build bootimage for weird birb ROM.."
 else
@@ -32,53 +32,53 @@ else
 fi
 
 # Check device
-if [ -z $DEVICE ]
+if [ -z "${DEVICE}" ]
 then
   die "Choose device to proceed!"
 fi
 
 # Setup environment
 info "Setting up build environment"
-cd $ROM_PATH
+cd "${ROM_PATH}"
 . build/envsetup.sh
 
 # Set the device
 info "Setting up the device..."
-if [ "$ROM" == "abc" ]
+if [ "${ROM}" == "abc" ]
 then
-  breakfast "$DEVICE-userdebug"
-elif [ "$ROM" == "aosip" ]
+  breakfast "${DEVICE}-userdebug"
+elif [ "${ROM}" == "aosip" ]
 then
-  lunch aosip_$DEVICE-userdebug
+  lunch "aosip_${DEVICE}-userdebug"
 fi
 
 # Start compilation with log
-info "Starting build kernel for $DEVICE and saving a build log file"
-rm -f $BUILD_PATH/{boot.img,kernel}
-mka bootimage 2>&1 | tee $HOME/logs/buildromkernel.log
+info "Starting build kernel for ${DEVICE} and saving a build log file"
+rm -f "${BUILD_PATH}/{boot.img,kernel}"
+mka bootimage 2>&1 | tee "${HOME}/logs/buildromkernel.log"
 
 
 # If the above was successful
-if [ `ls $BUILD_PATH/boot.img 2>/dev/null | wc -l` != "0" ]
+if [[ -f "${BUILD_PATH}/boot.img" ]]
 then
   success "Build successful"
   # Go anykernel
-  if [ "$ANYKERNEL" == "ak" ]
+  if [ "${ANYKERNEL}" == "ak" ]
   then
     info "Adding kernel to AnyKernel2"
-    mv -f $BUILD_PATH/kernel $AK2_PATH/Image.gz-dtb
-    cd $AK2_PATH
-    zip -r9 $ZIPNAME.zip * --exclude=*README* --exclude=*.zip  $ZIPNAME.zip
+    mv -f "${BUILD_PATH}/kernel" "${AK2_PATH}/Image.gz-dtb"
+    cd "${AK2_PATH}"
+    zip -r9 "${ZIPNAME}.zip" ./* --exclude="*README*" --exclude="*.zip"  "${ZIPNAME}.zip"
   fi
   # Google Drive upload
-  if [ "$GDRIVE" == "gdrive" ]
+  if [ "${GDRIVE}" == "gdrive" ]
   then
     info "Uploading stuffs to Google Drive"
-    if [ "$ANYKERNEL" == "ak" ]
+    if [ "${ANYKERNEL}" == "ak" ]
     then
-      gdrive upload $AK2_PATH/$ZIPNAME.zip
+      gdrive upload "${AK2_PATH}/${ZIPNAME}.zip"
     else
-      gdrive upload $BUILD_PATH/boot.img;
+      gdrive upload "${BUILD_PATH}/boot.img"
     fi
   fi
 # If the build failed
@@ -87,5 +87,5 @@ else
 fi
 
 # Stop tracking time
-END=$(date +%s)
-info "Build time: $(echo $((${END}-${START})) | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
+END="$(date +%s)"
+info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
