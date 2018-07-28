@@ -53,14 +53,14 @@ KERNEL_DIR="${HOME}/linux/${DEVICE}"
 BUILD_DIR="${HOME}/linux/build-${DEVICE}"
 
 # Anykernel
-AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
+export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
 # Defconfig
 DEFCONFIG="${DEVICE}_defconfig"
 
 # Output
-COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
+export COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
 
 # Use GCC 7 for kenzo (coz kanzur)
 if [ "${DEVICE}" == "kenzo" ]

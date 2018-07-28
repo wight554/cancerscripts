@@ -42,10 +42,10 @@ fi
 # Build dirs
 ROM_PATH="${HOME}/${ROM}"
 BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
-COMPILED_IMAGE="${BUILD_PATH}/kernel"
+export COMPILED_IMAGE="${BUILD_PATH}/kernel"
 
 # Anykernel
-AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
+export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 ZIPNAME="PlaceholderKernel-${DEVICE}-$(date +'%Y%m%d').zip"
 
 # Setup environment

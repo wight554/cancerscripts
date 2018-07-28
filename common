@@ -17,6 +17,10 @@ RST="\\033[0m"
 # KBUILD_BUILD_USER is set in .bashrc
 export USER="${KBUILD_BUILD_USER}"
 
+
+# Shellcheck, are you satisfied now?
+export CCACHE JOBS_FLAG
+
 # Make threads
 THREADS="$(($(nproc --all) + 1))"
 JOBS_FLAG="-j${THREADS}"
