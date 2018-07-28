@@ -20,6 +20,9 @@ while [[ "${#}" -ge 1 ]]; do
         "-g"|"--gdrive")
             GDRIVE=true ;;
 
+        "-c"|"--clean")
+            CLEAN=true ;;
+
         *) die "Invalid parameter specified!" ;;
     esac
 
@@ -85,13 +88,20 @@ then
 		       -mllvm -polly-detect-keep-going"
 fi
 
+# Cleanup build dir if needed otherwise clean dtb only
+if [[ -n "${CLEAN}" ]]
+then
+  rm -rf "${BUILD_DIR}" && mkdir -p "${BUILD_DIR}"
+else
+  rm -rf "${BUILD_DIR}/arch/arm64/boot/dts/qcom/"
+fi
+
 # Start madness
 cd "${KERNEL_DIR}" || die "Kernel die doesn't exist!"
 
 # Generate defconfig
 defconfig()
 {
-  rm -rf "${BUILD_DIR}/arch/arm64/boot/dts/qcom/"
   info "Generating defconfig"
   make -s ARCH="arm64" O="${BUILD_DIR}" "${DEFCONFIG}" "${JOBS_FLAG}"
 }
