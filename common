@@ -29,11 +29,11 @@ function echo() {
 # Prints an error in bold red and exits the script
 die() { echo "${RED}${1}${RST}" 1>&2; exit 1; }
 
-# Prints an info message in bold blue and exits the script
+# Prints an info message in bold blue
 info() { echo "${BLUE}${1}${RST}" 1>&2; }
 
-# Prints a success message in bold green and exits the script
+# Prints a success message in bold green
 success() { echo "${GRN}${1}${RST}" 1>&2; }
 
-# Prints a failed message in bold green and exits the script
-failed() { echo "${RED}${1}${RST}" 1>&2; }
+# Prints a failed message in bold blinking red
+failed() { echo "${BLINK_RED}${1}${RST}" 1>&2; }
