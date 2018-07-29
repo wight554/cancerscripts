@@ -33,14 +33,10 @@ done
 [[ -z "${ROM}" ]] && ROM="abc"
 [[ -z "${DEVICE}" ]] && DEVICE="chiron"
 
-# Check ROM
-if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
-then
-  die "Only ABC and AOSIP are supported!"
-fi
+# ROM enviroment
+setup_romenv
 
 # Build dirs
-ROM_PATH="${HOME}/${ROM}"
 BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
 export COMPILED_IMAGE="${BUILD_PATH}/kernel"
 
@@ -48,21 +44,6 @@ export COMPILED_IMAGE="${BUILD_PATH}/kernel"
 export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
 KERNEL_NAME="PlaceholderKernel"
 ZIPNAME="${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
-
-# Setup environment
-info "Setting up build environment"
-cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
-source "${ROM_PATH}/build/envsetup.sh"
-
-# Set the device
-info "Setting up the device..."
-if [ "${ROM}" == "abc" ]
-then
-  breakfast "${DEVICE}-userdebug"
-elif [ "${ROM}" == "aosip" ]
-then
-  lunch "aosip_${DEVICE}-userdebug"
-fi
 
 # Start compilation with log
 info "Starting build kernel for ${DEVICE} and saving a build log file"

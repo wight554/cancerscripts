@@ -39,29 +39,8 @@ done
 [[ -z "${ROM}" ]] && ROM="abc"
 [[ -z "${DEVICE}" ]] && DEVICE="chiron"
 
-# Check ROM
-if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
-then
-  die "Only ABC and AOSIP are supported!"
-fi
-
-# Build dirs
-ROM_PATH="${HOME}/${ROM}"
-
-# Setup environment
-info "Setting up build environment"
-cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
-source "${ROM_PATH}/build/envsetup.sh"
-
-# Set the device
-info "Setting up the device..."
-if [ "${ROM}" == "abc" ]
-then
-  breakfast "${DEVICE}-userdebug"
-elif [ "${ROM}" == "aosip" ]
-then
-  lunch "aosip_${DEVICE}-userdebug"
-fi
+# ROM enviroment
+setup_romenv
 
 # Sync repo if needed
 if [[ -n "${SYNC}" ]]

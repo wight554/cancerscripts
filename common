@@ -125,6 +125,33 @@ function format_time() {
     echo "${TIME_STRING}"
 }
 
+
+setup_romenv() {
+# Build dirs
+export ROM_PATH="${HOME}/${ROM}"
+
+# Check ROM
+if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
+then
+  die "Only ABC and AOSIP are supported!"
+fi
+
+# Setup environment
+info "Setting up build environment"
+cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
+source "${ROM_PATH}/build/envsetup.sh"
+
+# Set the device
+info "Setting up the device..."
+if [ "${ROM}" == "abc" ]
+then
+  breakfast "${DEVICE}-userdebug"
+elif [ "${ROM}" == "aosip" ]
+then
+  lunch "aosip_${DEVICE}-userdebug"
+fi
+}
+
 # Enforces the value needed for two-part flags
 function enforce_value() {
     [[ "${#}" -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
