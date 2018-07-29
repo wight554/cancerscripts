@@ -121,5 +121,5 @@ info "Build time: $(format_time "${START}" "${END}")"
 # Shutdown the system if required by the user
 if [[ -n "${POWEROFF}" ]]
 then
-  poweroff
+  poweroff || sudo poweroff
 fi
