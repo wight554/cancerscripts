@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Start tracking time
+START="$(date +"%s")"
+
+# Common script
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+
+# Parameters
+while [[ "${#}" -ge 1 ]]; do
+    case "${1}" in
+        "-r"|"--rom")
+            shift && enforce_value "${@}"
+            ROM="${1}" ;;
+
+        "-d"|"--device")
+            shift && enforce_value "${@}"
+            DEVICE="${1}" ;;
+
+        "-p"|"--package")
+            shift && enforce_value "${@}"
+            PACKAGE="${1}" ;;
+
+        "-g"|"--gdrive")
+            GDRIVE=true ;;
+
+        *) die "Invalid parameter specified!" ;;
+    esac
+
+    shift
+done
+
+# Default parameters
+[[ -z "${ROM}" ]] && ROM="abc"
+[[ -z "${DEVICE}" ]] && DEVICE="chiron"
+
+# ROM enviroment
+setup_romenv
+
+# Package should be specified
+if [[ -n "${PACKAGE}" ]]
+then
+  make "${PACKAGE}"
+else
+  die "Package should be specified!"
+fi
+
+# Split output files into array
+mapfile -t OUTPUT < <(find "${ROM_PATH}/out/target/product/${DEVICE}/"{system,vendor} -name "${PACKAGE}*" -type f )
+
+# Check if everything is fine
+if [[ -n "${OUTPUT[*]}" ]]
+then
+  # Upload output files one by one
+  if [[ -n "${GDRIVE}" ]]
+  then
+    for i in $(seq 0 "$(("${#OUTPUT[@]}"-1))")
+    do
+      gdrive upload "${OUTPUT[${i}]}"
+    done
+  fi
+  success "Build successful"
+else
+  failed "Build failed"
+fi
+
+# Stop tracking time
+END="$(date +"%s")"
+info "Build time: $(format_time "${START}" "${END}")"
