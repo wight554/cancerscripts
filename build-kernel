@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start tracking time
-START="$(date +%s)"
+START="$(date +"%s")"
 
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
@@ -187,5 +187,5 @@ then
 fi
 
 # Stop tracking time
-END="$(date +%s)"
-info "Build time: $(echo "$(("${END}"-"${START}"))" | awk '{print int($1/60)" minutes and "int($1%60)" seconds"}')"
+END="$(date +"%s")"
+info "Build time: $(format_time "${START}" "${END}")"
