@@ -23,8 +23,11 @@ while [[ "${#}" -ge 1 ]]; do
         "-u"|"--upload")
             UPLOAD=true ;;
 
-        "-c"|"--clean")
+        "-C"|"--clean")
             CLEAN=true ;;
+
+        "-c"|"--changelog")
+            CHANGELOG=true ;;
 
         *) die "Invalid parameter specified!" ;;
     esac
@@ -65,6 +68,9 @@ DEFCONFIG="${DEVICE}_defconfig"
 
 # Output
 export COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
+
+# Changelog
+export CHANGELOG="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.log"
 
 # Use GCC 7 for kenzo (coz kanzur)
 if [ "${DEVICE}" == "kenzo" ]
@@ -166,6 +172,18 @@ if [[ -n "${UPLOAD}" ]]
 then
   telegram_notify "${KERNEL_NAME} ${DATE} for ${DEVICE} is ready, uploading!"
   telegram_upload "${ZIPNAME}"
+fi
+
+if [[ -n "${CHANGELOG}" ]]
+then
+  generate_changelog "${KERNEL_DIR}"
+  if [[ -n "${UPLOAD}" ]]
+  then
+    telegram_upload "${CHANGELOG}"
+  elif [[ -n "${GDRIVE}" ]]
+  then
+    gdrive upload "${CHANGELOG}"
+  fi
 fi
 
 # Stop tracking time

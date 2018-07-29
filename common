@@ -69,6 +69,28 @@ telegram_upload() {
 curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" -F chat_id="${CHATID}" >> /dev/null
 }
 
+# Changelog for specified repo (last week)
+generate_changelog() {
+    info "Generating changelog"
+    cd "${1}" || die "Repo doesn't exist"
+    if [[ -f "${CHANGELOG}" ]]
+    then
+        rm -f "${CHANGELOG}"
+    fi
+    for i in $(seq 7)
+    do
+        AFTER="$(date --date="${i} days ago" +%F)"
+        UNTIL="$(date --date="$((i -1)) days ago" +%F)"
+        {
+            echo "####################"
+            echo "     ${AFTER}"
+            echo "####################"
+            git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
+            echo ""
+        } >> "${CHANGELOG}"
+    done
+}
+
 # Enforces the value needed for two-part flags
 function enforce_value() {
     [[ "${#}" -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
