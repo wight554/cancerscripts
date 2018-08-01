@@ -62,7 +62,7 @@ DEFCONFIG="${DEVICE}_defconfig"
 export COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
 
 # Changelog
-export CHANGELOG="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.log"
+export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
 
 # GCC paths variables
 GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
@@ -164,10 +164,10 @@ then
   generate_changelog "${KERNEL_DIR}"
   if [[ -n "${UPLOAD}" ]]
   then
-    telegram_upload "${CHANGELOG}"
+    telegram_upload "${CHANGELOG_PATH}"
   elif [[ -n "${GDRIVE}" ]]
   then
-    gdrive upload "${CHANGELOG}"
+    gdrive upload "${CHANGELOG_PATH}"
   fi
 fi
 

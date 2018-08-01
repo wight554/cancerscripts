@@ -73,9 +73,9 @@ curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" 
 generate_changelog() {
     info "Generating changelog"
     cd "${1}" || die "Repo doesn't exist"
-    if [[ -f "${CHANGELOG}" ]]
+    if [[ -f "${CHANGELOG_PATH}" ]]
     then
-        rm -f "${CHANGELOG}"
+        rm -f "${CHANGELOG_PATH}"
     fi
     for i in $(seq 7)
     do
@@ -87,7 +87,7 @@ generate_changelog() {
             echo "####################"
             git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
             echo ""
-        } >> "${CHANGELOG}"
+        } >> "${CHANGELOG_PATH}"
     done
 }
 
