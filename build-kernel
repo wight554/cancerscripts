@@ -45,15 +45,6 @@ then
   die "Dafuq u wanna build with?"
 fi
 
-# Kenzo can not into clang
-if [[ "${TOOLCHAIN}" == "clang" && "${DEVICE}" == "kenzo" ]]
-then
-  die "No clang for 3.10 plebs!"
-elif [[ -z "${TOOLCHAIN}" && "${DEVICE}" == "kenzo" ]]
-then
-  TOOLCHAIN="gcc"
-fi
-
 # Build dirs
 KERNEL_DIR="${HOME}/linux/${DEVICE}"
 BUILD_DIR="${HOME}/linux/build-${DEVICE}"
@@ -73,15 +64,8 @@ export COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
 # Changelog
 export CHANGELOG="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.log"
 
-# Use GCC 7 for kenzo (coz kanzur)
-if [ "${DEVICE}" == "kenzo" ]
-then
-  GCC_FOLDER="${HOME}/toolchains/linaro-gcc-7.x"
-else
-  GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
-fi
-
 # GCC paths variables
+GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
 GCC="$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
 CC="${GCC%gcc}"
 
