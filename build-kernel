@@ -57,6 +57,7 @@ fi
 # Build dirs
 KERNEL_DIR="${HOME}/linux/${DEVICE}"
 BUILD_DIR="${HOME}/linux/build-${DEVICE}"
+[[ ! -d "${BUILD_DIR}" ]] && mkdir -p "${BUILD_DIR}"
 
 # Anykernel
 export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
@@ -145,7 +146,7 @@ kernel()
 # Push kernel image and ramdisk to anykernel zip
 ramdisk()
 {
-  cd "${BUILD_DIR}" || info "Out dir doesn't exist, let's create one!"; mkdir -p "${BUILD_DIR}"; cd "${BUILD_DIR}" || die "Someting went wrong!"
+  cd "${BUILD_DIR}" || die "Something went wrong!"
   if [[ -f "${COMPILED_IMAGE}" ]]
   then
     info "Adding kernel to AnyKernel2"
