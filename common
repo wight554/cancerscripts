@@ -5,13 +5,13 @@ export USE_CCACHE=1
 /usr/bin/ccache -M 50G
 
 # Colors
-BLINK_RED="\\033[05;31m"
+# BLINK_RED="\\033[05;31m"
 BLUE="\\033[01;34m"
 # BOLD="\\033[1m"
 GRN="\\033[01;32m"
 RED="\\033[01;31m"
 RST="\\033[0m"
-# YLW="\\033[01;33m"
+YLW="\\033[01;33m"
 
 # Export username for android props
 # KBUILD_BUILD_USER is set in .bashrc
@@ -30,132 +30,215 @@ JOBS_FLAG="-j${THREADS}"
 # Common ccache variable
 CCACHE=$(command -v ccache)
 
+######################
+##  ECHO FUNCTIONS  ##
+######################
+
 # Alias for echo to print escape codes
 function echo() {
-    command echo -e "${@}"
+  command echo -e "${@}"
+}
+
+# Prints a formatted info to point out what is being done to the user
+function header() {
+  echo "${2}====$(for i in $(seq ${#1}); do echo "=\\c"; done)===="
+  echo "==  ${1}  =="
+  echo "====$(for i in $(seq ${#1}); do echo "=\\c"; done)====${RST}"
 }
 
 # Prints an error in bold red and exits the script
-die() { echo "${RED}${1}${RST}" 1>&2; exit 1; }
+function die() { echo "${RED}${1}${RST}" 1>&2; exit 1; }
 
 # Prints an info message in bold blue
-info() { echo "${BLUE}${1}${RST}" 1>&2; }
+function info() { echo "${BLUE}${1}${RST}" 1>&2; }
 
 # Prints a success message in bold green
-success() { echo "${GRN}${1}${RST}" 1>&2; }
+function warn() { echo "${YLW}${1}${RST}" 1>&2; }
 
-# Prints a failed message in bold blinking red
-failed() { echo "${BLINK_RED}${1}${RST}" 1>&2; }
+#########################
+##  VERBOSE FUNCTIONS  ##
+#########################
 
-# Function for zipping Anykernel2
-zip_ak2(){
-    mv -f "${COMPILED_IMAGE}" "${AK2_PATH}/Image.gz-dtb"
-    cd "${AK2_PATH}" || die "Anykernel2 folder doesn't exist!"
-    zip -r9 "${ZIPNAME}" ./* -x "README.md" -x "./*.zip"
+# Start script with formatted message
+function startscript() {
+  START="$(date +"%s")" && header "BUILD STARTED!" "${GRN}"
 }
 
-# Uploads a document to a Telegram chat
-# Token should be exported from .bashrc
-if [[ -z "${TOKEN}" ]]; then
-    die "How can u use telegram bot without token?"
-fi
-if [[ -z "${CHATID}" ]]; then
-    die "Who you gonna call?"
-fi
-telegram_notify() {
-curl -s https://api.telegram.org/bot"${TOKEN}"/sendMessage -d text="${1}" -d chat_id="${CHATID}" >> /dev/null
-}
-telegram_upload() {
-curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" -F chat_id="${CHATID}" >> /dev/null
-}
-
-# Changelog for specified repo (last week)
-generate_changelog() {
-    info "Generating changelog"
-    cd "${1}" || die "Repo doesn't exist"
-    if [[ -f "${CHANGELOG_PATH}" ]]
-    then
-        rm -f "${CHANGELOG_PATH}"
-    fi
-    for i in $(seq 7)
-    do
-        AFTER="$(date --date="${i} days ago" +%F)"
-        UNTIL="$(date --date="$((i -1)) days ago" +%F)"
-        {
-            echo "####################"
-            echo "     ${AFTER}"
-            echo "####################"
-            git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
-            echo ""
-        } >> "${CHANGELOG_PATH}"
-    done
+# End script with formatted message and build time
+function endscript() {
+  if checkoutput; then header "BUILD COMPLETED!" "${GRN}"; else header "BUILD FAILED!" "${RED}"; fi
+  END="$(date +"%s")"
+  info "BUILD TIME: $(format_time "${START}" "${END}")"
+  if [[ -n "${POWEROFF}" ]]
+  then
+    poweroff || sudo poweroff
+  fi
 }
 
 # Formats the time for the end
 function format_time() {
-    MINS="$(((${2} - ${1}) / 60))"
-    SECS="$(((${2} - ${1}) % 60))"
-    if [[ "${MINS}" -ge 60 ]]; then
-        HOURS="$((MINS / 60))"
-        MINS="$((MINS % 60))"
-    fi
+  MINS="$(((${2} - ${1}) / 60))"
+  SECS="$(((${2} - ${1}) % 60))"
+  if [[ "${MINS}" -ge 60 ]]
+  then
+    HOURS="$((MINS / 60))"
+    MINS="$((MINS % 60))"
+  fi
 
-    if [[ "${HOURS}" -eq 1 ]]; then
-        TIME_STRING+="1 HOUR, "
-    elif [[ "${HOURS}" -ge 2 ]]; then
-        TIME_STRING+="${HOURS} HOURS, "
-    fi
+  if [[ "${HOURS}" -eq 1 ]]
+  then
+    TIME_STRING+="1 HOUR, "
+  elif [[ "${HOURS}" -ge 2 ]]
+  then
+    TIME_STRING+="${HOURS} HOURS, "
+  fi
 
-    if [[ "${MINS}" -eq 1 ]]; then
-        TIME_STRING+="1 MINUTE"
-    else
-        TIME_STRING+="${MINS} MINUTES"
-    fi
+  if [[ "${MINS}" -eq 1 ]]
+  then
+    TIME_STRING+="1 MINUTE"
+  else
+    TIME_STRING+="${MINS} MINUTES"
+  fi
 
-    if [[ "${SECS}" -eq 1 && -n "${HOURS}" ]]; then
-        TIME_STRING+=", AND 1 SECOND"
-    elif [[ "${SECS}" -eq 1 && -z "${HOURS}" ]]; then
-        TIME_STRING+=" AND 1 SECOND"
-    elif [[ "${SECS}" -ne 1 && -n "${HOURS}" ]]; then
-        TIME_STRING+=", AND ${SECS} SECONDS"
-    elif [[ "${SECS}" -ne 1 && -z "${HOURS}" ]]; then
-        TIME_STRING+=" AND ${SECS} SECONDS"
-    fi
+  if [[ "${SECS}" -eq 1 && -n "${HOURS}" ]]
+  then
+    TIME_STRING+=", AND 1 SECOND"
+  elif [[ "${SECS}" -eq 1 && -z "${HOURS}" ]]
+  then
+    TIME_STRING+=" AND 1 SECOND"
+  elif [[ "${SECS}" -ne 1 && -n "${HOURS}" ]]
+  then
+    TIME_STRING+=", AND ${SECS} SECONDS"
+  elif [[ "${SECS}" -ne 1 && -z "${HOURS}" ]]
+  then
+    TIME_STRING+=" AND ${SECS} SECONDS"
+  fi
 
-    echo "${TIME_STRING}"
+  echo "${TIME_STRING}"
 }
 
-
-setup_romenv() {
-# Build dirs
-export ROM_PATH="${HOME}/${ROM}"
-
-# Check ROM
-if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
-then
-  die "Only ABC and AOSIP are supported!"
-fi
-
-# Setup environment
-info "Setting up build environment"
-cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
-source "${ROM_PATH}/build/envsetup.sh"
-
-# Set the device
-info "Setting up the device..."
-if [ "${ROM}" == "abc" ]
-then
-  breakfast "${DEVICE}-userdebug"
-elif [ "${ROM}" == "aosip" ]
-then
-  lunch "aosip_${DEVICE}-userdebug"
-fi
-}
-
-# Enforces the value needed for two-part flags
-function enforce_value() {
-    [[ "${#}" -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
+# Changelog for specified repo (last week)
+generate_changelog() {
+  info "Generating changelog"
+  cd "${1}" || die "Repo doesn't exist"
+  if [[ -f "${CHANGELOG_PATH}" ]]
+  then
+    rm -f "${CHANGELOG_PATH}"
+  fi
+  for i in $(seq 7)
+  do
+    AFTER="$(date --date="${i} days ago" +%F)"
+    UNTIL="$(date --date="$((i -1)) days ago" +%F)"
+  {
+    echo "####################"
+    echo "     ${AFTER}"
+    echo "####################"
+    git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
+    echo ""
+  } >> "${CHANGELOG_PATH}"
+  done
 }
 
 # Add trap for catching Ctrl-C
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
+
+#############################
+##  COMPILATION FUNCTIONS  ##
+#############################
+
+# Enforces the value needed for two-part flags
+function enforce_value()
+{
+  [[ "${#}" -lt 1 ]] && die "A additional value is needed for one of the flags passed to this script!"
+}
+
+function romenviroment()
+{
+  info "Setting up build environment"
+
+  # Build dirs
+  export ROM_PATH="${HOME}/${ROM}"
+  export BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
+
+  # Check ROM
+  if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
+  then
+    die "Only ABC and AOSIP are supported!"
+  fi
+
+  # Setup environment
+  cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
+  source "${ROM_PATH}/build/envsetup.sh"
+
+  # Set the device
+  info "Setting up the device..."
+  if [ "${ROM}" == "abc" ]
+  then
+    breakfast "${DEVICE}-userdebug"
+  elif [ "${ROM}" == "aosip" ]
+  then
+    lunch "aosip_${DEVICE}-userdebug"
+  fi
+}
+
+#  Zipping AnyKernel2
+function ramdisk()
+{
+  # Common paths
+  AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
+  KERNEL_NAME="PlaceholderKernel"
+  OUTPUT="${AK2_PATH}/${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
+
+  # Move kernel image specified in kernel compilation script
+  info "Moving kernel image to AnyKernel2 folder..."
+  mv -f "${COMPILED_IMAGE}" "${AK2_PATH}/Image.gz-dtb"
+
+  # Create flashable AnyKernel2 zip
+  cd "${AK2_PATH}" || die "AnyKernel2 folder doesn't exist!"
+  zip -r9 "${OUTPUT}" ./* -x "README.md" -x "./*.zip"
+}
+
+# Check if compilation output exists
+function checkoutput() {
+  for i in $(seq 0 "$(("${#OUTPUT[@]}"-1))")
+  do
+    [[ -f "${OUTPUT[${i}]}" ]] || break
+  done && return
+  false
+}
+
+########################
+##  UPLOAD FUNCTIONS  ##
+########################
+
+# Notify Telegram chat about smth
+function telegram_notify() {
+  curl -s https://api.telegram.org/bot"${TOKEN}"/sendMessage -d text="${1}" -d chat_id="${CHATID}" >> /dev/null
+}
+
+# Upload file to Telegram chat
+function telegram_upload() {
+  curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" -F chat_id="${CHATID}" >> /dev/null
+}
+
+# Checks which upload source is specified
+function checkupload() {
+  # Uploads a document to a Telegram chat (if it's not a ROM)
+  [[ -n "${TOKEN}" && -n "${CHATID}" && -n "${TELEGRAM}" && "${OUTPUT,,}" != *"${ROM}"* ]] && info "Uploading $( echo ${1} | sed "s/.*\///" ) to Telegram..." && telegram_upload "${1}"
+  # Uploads a document to Google Drive
+  [[ -n "${GDRIVE}" ]] && info "Uploading $( echo ${1} | sed "s/.*\///" ) to Google Drive..." &&  gdrive upload "${1}"
+}
+
+# Uploads all the things to specified place
+function upload() {
+  # Check if everything is fine
+  if checkoutput 
+  then
+    [[ -z "${ROM}" && -n "${TELEGRAM}"  ]] && telegram_notify "${KERNEL_NAME} ${DATE} for ${DEVICE} is ready, uploading!"
+    for FILE in "${OUTPUT[@]}"
+    do
+      checkupload "${FILE}"
+    done
+    [[ -n "${CHANGELOG}"  ]] && checkupload "${CHANGELOG_PATH}"
+  fi
+}

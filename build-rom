@@ -1,104 +1,105 @@
 #!/bin/bash
 
-# Start tracking time
-START="$(date +"%s")"
+# Gather parameters
+function parse_parameters()
+{
+  while [[ "${#}" -ge 1 ]]; do
+    case "${1}" in
+      "-d"|"--device")
+        shift && enforce_value "${@}"
+        DEVICE="${1}" ;;
+
+      "-r"|"--rom")
+        shift && enforce_value "${@}"
+        ROM="${1}" ;;
+
+      "-g"|"--gdrive")
+        export GDRIVE=true ;;
+
+      "-tg"|"--telegram")
+        export TELEGRAM=true ;;
+
+      "-o"|"--off")
+        export POWEROFF=true ;;
+
+      "-c"|"--clean")
+        CLEAN=true ;;
+
+      "-s"|"--sync")
+        SYNC=true ;;
+
+      *) die "Invalid parameter specified!" ;;
+    esac
+    shift
+  done
+
+  # Default parameters
+  [[ -z "${ROM}" ]] && ROM="abc"
+  [[ -z "${DEVICE}" ]] && DEVICE="chiron"
+}
+
+# Pretty small one
+function sync()
+{
+  if [[ -n "${SYNC}" ]]
+  then
+    repo sync
+  fi
+}
+
+# Go clean if needed, otherwise installclean
+function clean()
+{
+  if [[ -n "${CLEAN}" ]]
+  then
+    info "Cleaning build directory..."
+    make clobber
+  else
+    info "Clean not specified, go installclean..."
+    make installclean
+  fi
+}
+
+function buildrom()
+{
+  #  Start compilation
+  info "Compiling ${ROM} for ${DEVICE}..."
+  if [ "${ROM}" == "abc" ]
+  then
+    mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
+  elif [ "${ROM}" == "aosip" ]
+  then
+    time mka kronic 2>&1 | tee "${HOME}/logs/build.log"
+  fi
+
+  # Output files
+  OUTPUT="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
+  CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
+  export OUTPUT CHANGELOG_PATH
+}
+
+#####################
+##  RUN THEM ALL!  ##
+#####################
 
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Parameters
-while [[ "${#}" -ge 1 ]]; do
-    case "${1}" in
-        "-r"|"--rom")
-            shift && enforce_value "${@}"
-            ROM="${1}" ;;
+# Print formatted message about build start
+startscript
 
-        "-d"|"--device")
-            shift && enforce_value "${@}"
-            DEVICE="${1}" ;;
+# Parse parameters and setup enviroment
+parse_parameters "${@}"
+romenviroment
 
-        "-g"|"--gdrive")
-            GDRIVE=true ;;
+# Sync if needed
+sync
 
-        "-s"|"--sync")
-            SYNC=true ;;
+# Compile ROM
+buildrom
 
-        "-c"|"--clean")
-            CLEAN=true ;;
+# Upload if needed
+upload
 
-        "-off"|"--poweroff")
-            POWEROFF=true ;;
-
-        *) die "Invalid parameter specified!" ;;
-    esac
-
-    shift
-done
-
-# Default parameters
-[[ -z "${ROM}" ]] && ROM="abc"
-[[ -z "${DEVICE}" ]] && DEVICE="chiron"
-
-# ROM enviroment
-setup_romenv
-
-# Sync repo if needed
-if [[ -n "${SYNC}" ]]
-then
-  repo sync
-fi
-
-# Go clean if needed, otherwise installclean
-if [[ -n "${CLEAN}" ]]
-then
-  make clobber
-else
-  make installclean
-fi
-
-#  Start compilation
-info "Compiling ${ROM} for ${DEVICE} and saving a build log file"
-if [ "${ROM}" == "abc" ]
-then
-  mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
-elif [ "${ROM}" == "aosip" ]
-then
-  time mka kronic 2>&1 | tee "${HOME}/logs/build.log"
-fi
-
-# Output files
-ROMZIP="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
-CHANGELOG="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
-
-# If the above was successful
-if [[ -f "${ROMZIP}" ]]
-then
-  # Google Drive upload
-  if [[ -n "${GDRIVE}" ]]
-  then
-    info "Uploading build to Google Drive"
-    gdrive upload "${ROMZIP}"
-    # Upload changelog if ABC
-    if [ "${ROM}" == "abc" ]
-    then
-      gdrive upload "${CHANGELOG}"
-    fi
-  fi
-  success "Build successful"
-# If the build failed
-else
-  failed "Build failed"
-fi
-
-# Kill java if it's hanging on
-pkill java
-
-# Stop tracking time
-END="$(date +"%s")"
-info "Build time: $(format_time "${START}" "${END}")"
-
-# Shutdown the system if required by the user
-if [[ -n "${POWEROFF}" ]]
-then
-  poweroff || sudo poweroff
-fi
+# Print formatted message about script ending
+endscript

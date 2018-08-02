@@ -1,113 +1,108 @@
 #!/bin/bash
 
-# Start tracking time
-START="$(date +"%s")"
-
-# Common script
-source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
-
-# Parameters
-while [[ "${#}" -ge 1 ]]; do
+# Gather parameters
+function parse_parameters()
+{
+  while [[ "${#}" -ge 1 ]]; do
     case "${1}" in
-        "-d"|"--device")
-            shift && enforce_value "${@}"
-            DEVICE="${1}" ;;
+      "-d"|"--device")
+        shift && enforce_value "${@}"
+        DEVICE="${1}" ;;
 
-        "-t"|"--toolchain")
-            shift && enforce_value "${@}"
-            TOOLCHAIN="${1}" ;;
+      "-t"|"--toolchain")
+        shift && enforce_value "${@}"
+        TOOLCHAIN="${1}" ;;
 
-        "-g"|"--gdrive")
-            GDRIVE=true ;;
+      "-c"|"--changelog")
+        export CHANGELOG=true ;;
 
-        "-u"|"--upload")
-            UPLOAD=true ;;
+      "-g"|"--gdrive")
+        export GDRIVE=true ;;
 
-        "-C"|"--clean")
-            CLEAN=true ;;
+      "-tg"|"--telegram")
+        export TELEGRAM=true ;;
 
-        "-c"|"--changelog")
-            CHANGELOG=true ;;
+      "-C"|"--clean")
+        CLEAN=true ;;
 
-        *) die "Invalid parameter specified!" ;;
+      *) die "Invalid parameter specified!" ;;
     esac
-
     shift
 done
-
-# Default parameters
-[[ -z "${DEVICE}" ]] && DEVICE="chiron"
-[[ -z "${TOOLCHAIN}" ]] && TOOLCHAIN="clang"
-
-# Check TC
-if [[ "${TOOLCHAIN}" != "clang" && "${TOOLCHAIN}" != "gcc" ]]
-then
-  die "Dafuq u wanna build with?"
-fi
-
-# Build dirs
-KERNEL_DIR="${HOME}/linux/${DEVICE}"
-BUILD_DIR="${HOME}/linux/build-${DEVICE}"
-[[ ! -d "${BUILD_DIR}" ]] && mkdir -p "${BUILD_DIR}"
-
-# Anykernel
-export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
-KERNEL_NAME="PlaceholderKernel"
-ZIPNAME="${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
-
-# Defconfig
-DEFCONFIG="${DEVICE}_defconfig"
-
-# Output
-export COMPILED_IMAGE="arch/arm64/boot/Image.gz-dtb"
-
-# Changelog
-export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
-
-# GCC paths variables
-GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
-GCC="$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
-CC="${GCC%gcc}"
-
-# Clang paths variables
-CLANG_FOLDER="${HOME}/toolchains/own-clang-7.x/"
-CLANG="${CLANG_FOLDER}/bin/clang"
-CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
-
-# Optimizations (clang only)
-if [ "${TOOLCHAIN}" == "clang" ]
-then
-  KCFLAGS="-mllvm -polly \
-		       -mllvm -polly-run-dce \
-		       -mllvm -polly-run-inliner \
-		       -mllvm -polly-opt-fusion=max \
-		       -mllvm -polly-ast-use-context \
-		       -mllvm -polly-vectorizer=stripmine \
-		       -mllvm -polly-detect-keep-going"
-fi
-
-# Cleanup build dir if needed otherwise clean dtb only
-if [[ -n "${CLEAN}" ]]
-then
-  rm -rf "${BUILD_DIR}" && mkdir -p "${BUILD_DIR}"
-else
-  rm -rf "${BUILD_DIR}/arch/arm64/boot/dts/qcom/"
-fi
-
-# Start madness
-cd "${KERNEL_DIR}" || die "Kernel die doesn't exist!"
-
-# Generate defconfig
-defconfig()
-{
-  info "Generating defconfig"
-  make -s ARCH="arm64" O="${BUILD_DIR}" "${DEFCONFIG}" "${JOBS_FLAG}"
+  # Default parameters
+  [[ -z "${DEVICE}" ]] && DEVICE="chiron"
+  [[ -z "${TOOLCHAIN}" ]] && TOOLCHAIN="clang"
 }
 
-# Build kernel
-kernel()
+function enviroment()
 {
-  info "Compiling kernel"
+  info "Setting up build enviroment.."
+  sleep 1
+
+  # Check TC
+  if [[ "${TOOLCHAIN}" != "clang" && "${TOOLCHAIN}" != "gcc" ]]
+  then
+    die "Dafuq u wanna build with?"
+  fi
+
+  # Build dirs
+  KERNEL_DIR="${HOME}/linux/${DEVICE}"
+  BUILD_DIR="${HOME}/linux/build-${DEVICE}"
+  [[ ! -d "${BUILD_DIR}" ]] && warn "Build directory doesn't exist..."; mkdir -p "${BUILD_DIR}";
+
+  # Defconfig
+  DEFCONFIG="${DEVICE}_defconfig"
+
+  # COMPILED_IMAGE
+  export COMPILED_IMAGE="${BUILD_DIR}/arch/arm64/boot/Image.gz-dtb"
+
+  # Changelog
+  export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
+
+  # GCC paths variables
+  GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
+  GCC="$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
+  CC="${GCC%gcc}"
+
+  # Clang paths variables
+  CLANG_FOLDER="${HOME}/toolchains/own-clang-7.x/"
+  CLANG="${CLANG_FOLDER}/bin/clang"
+  CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
+
+  # Optimizations (clang only)
+  if [ "${TOOLCHAIN}" == "clang" ]
+  then
+    KCFLAGS="-mllvm -polly \
+      -mllvm -polly-run-dce \
+      -mllvm -polly-run-inliner \
+      -mllvm -polly-opt-fusion=max \
+      -mllvm -polly-ast-use-context \
+      -mllvm -polly-vectorizer=stripmine \
+      -mllvm -polly-detect-keep-going"
+  fi
+}
+function clean()
+{
+  # Cleanup build directory if needed otherwise clean dtb only
+  if [[ -n "${CLEAN}" ]]
+  then
+    info "Cleaning build directory..."
+    rm -rf "${BUILD_DIR}" && mkdir -p "${BUILD_DIR}"
+  else
+    info "Cleaning DTBs directory..."
+    sleep 1
+    rm -rf "${BUILD_DIR}/arch/arm64/boot/dts/qcom/"
+  fi
+}
+
+function buildkernel()
+{
+  # Open kernel directory
+  cd "${KERNEL_DIR}" || die "Kernel directory doesn't exist!"
+  info "Compiling kernel..."
+  # Generate defconfig
+  make -s ARCH="arm64" O="${BUILD_DIR}" "${DEFCONFIG}" "${JOBS_FLAG}"
+  # Build kernel
   if [ "${TOOLCHAIN}" == "clang" ]
   then
     make O="${BUILD_DIR}" "${JOBS_FLAG}" \
@@ -127,50 +122,31 @@ kernel()
   fi
 }
 
-# Push kernel image and ramdisk to anykernel zip
-ramdisk()
-{
-  cd "${BUILD_DIR}" || die "Something went wrong!"
-  if [[ -f "${COMPILED_IMAGE}" ]]
-  then
-    info "Adding kernel to AnyKernel2"
-    zip_ak2
-    # Google Drive upload
-    if [[ -n "${GDRIVE}" ]]
-    then
-      info "Uploading zip to Google Drive"
-      gdrive upload "${ZIPNAME}"
-    fi
-    success "Build competed!"
-  else
-    failed "Build failed!"
-  fi
-}
+#####################
+##  RUN THEM ALL!  ##
+#####################
 
-# Run them all
-defconfig
-kernel
+# Common script
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+
+# Print formatted message about build start
+startscript
+
+# Parse parameters and setup enviroment
+parse_parameters "${@}"
+enviroment
+
+# Cleanup
+clean
+
+# Compile kernel image
+buildkernel
+
+# Make Anykernel2 zip
 ramdisk
 
-# Upload kernel zip to Telegram chat if requested
-if [[ -n "${UPLOAD}" ]]
-then
-  telegram_notify "${KERNEL_NAME} ${DATE} for ${DEVICE} is ready, uploading!"
-  telegram_upload "${ZIPNAME}"
-fi
+# Upload if needed
+upload
 
-if [[ -n "${CHANGELOG}" ]]
-then
-  generate_changelog "${KERNEL_DIR}"
-  if [[ -n "${UPLOAD}" ]]
-  then
-    telegram_upload "${CHANGELOG_PATH}"
-  elif [[ -n "${GDRIVE}" ]]
-  then
-    gdrive upload "${CHANGELOG_PATH}"
-  fi
-fi
-
-# Stop tracking time
-END="$(date +"%s")"
-info "Build time: $(format_time "${START}" "${END}")"
+# Print formatted message about script ending
+endscript

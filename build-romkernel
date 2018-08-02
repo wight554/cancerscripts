@@ -1,81 +1,84 @@
 #!/bin/bash
 
-# Start tracking time
-START="$(date +"%s")"
+# Gather parameters
+function parse_parameters()
+{
+  while [[ "${#}" -ge 1 ]]; do
+    case "${1}" in
+      "-d"|"--device")
+        shift && enforce_value "${@}"
+        DEVICE="${1}" ;;
+
+      "-r"|"--rom")
+        shift && enforce_value "${@}"
+        ROM="${1}" ;;
+
+      "-g"|"--gdrive")
+        export GDRIVE=true ;;
+
+      "-tg"|"--telegram")
+        export TELEGRAM=true ;;
+
+      "-ak"|"--anykernel")
+        ANYKERNEL=true ;;
+
+      *) die "Invalid parameter specified!" ;;
+    esac
+    shift
+  done
+
+  # Default parameters
+  [[ -z "${ROM}" ]] && ROM="abc"
+  [[ -z "${DEVICE}" ]] && DEVICE="chiron"
+}
+
+# Build kernel image by using ROM sources
+function buildromkernel() {
+  # Small cleanup
+  info "Removing old images..."
+  rm -f "${BUILD_PATH}/{boot.img,kernel}"
+
+  # Compilation
+  info "Compiling boot and kernel images for ${DEVICE}..."
+  mka bootimage 2>&1 | tee "${HOME}/logs/buildromkernel.log"
+
+  # Export output image for anykernel2
+  export COMPILED_IMAGE="${BUILD_PATH}/kernel"
+}
+
+# If anykernel is chosen we compress kernel image into Anykernel2 zip
+# Otherwise we use bootimage as output for further commands
+function choose_output() {
+  if [[ -n "${ANYKERNEL}" ]]
+  then
+    ramdisk # Anykernel2 zipping
+  else
+    export OUTPUT="${BUILD_PATH}/boot.img"
+  fi
+}
+
+#####################
+##  RUN THEM ALL!  ##
+#####################
 
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Parameters
-while [[ "${#}" -ge 1 ]]; do
-    case "${1}" in
-        "-r"|"--rom")
-            shift && enforce_value "${@}"
-            ROM="${1}" ;;
+# Print formatted message about build start
+startscript
 
-        "-d"|"--device")
-            shift && enforce_value "${@}"
-            DEVICE="${1}" ;;
+# Parse parameters and setup enviroment
+parse_parameters "${@}"
+romenviroment
 
-        "-g"|"--gdrive")
-            GDRIVE=true ;;
+# Compile boot and kernel images
+buildromkernel
 
-        "-ak2"|"--anykernel2")
-            ANYKERNEL=true ;;
+# Choose which image to use as output one
+choose_output
 
-        *) die "Invalid parameter specified!" ;;
-    esac
+# Upload if needed
+upload
 
-    shift
-done
-
-# Default parameters
-[[ -z "${ROM}" ]] && ROM="abc"
-[[ -z "${DEVICE}" ]] && DEVICE="chiron"
-
-# ROM enviroment
-setup_romenv
-
-# Build dirs
-BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
-export COMPILED_IMAGE="${BUILD_PATH}/kernel"
-
-# Anykernel
-export AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
-KERNEL_NAME="PlaceholderKernel"
-ZIPNAME="${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
-
-# Start compilation with log
-info "Starting build kernel for ${DEVICE} and saving a build log file"
-rm -f "${BUILD_PATH}/{boot.img,kernel}"
-mka bootimage 2>&1 | tee "${HOME}/logs/buildromkernel.log"
-
-# If the above was successful
-if [[ -f "${BUILD_PATH}/boot.img" ]]
-then
-  # Go anykernel
-  if [[ -n "${ANYKERNEL}" ]]
-  then
-    info "Adding kernel to AnyKernel2"
-    zip_ak2
-  fi
-  # Google Drive upload
-  if [[ -n "${GDRIVE}" ]]
-  then
-    info "Uploading stuffs to Google Drive"
-    if [[ -n "${ANYKERNEL}" ]]
-    then
-      gdrive upload "${AK2_PATH}/${ZIPNAME}"
-    else
-      gdrive upload "${BUILD_PATH}/boot.img"
-    fi
-  fi
-  success "Build successful"
-# If the build failed
-else
-  failed "Build failed"
-fi
-
-# Stop tracking time
-END="$(date +"%s")"
-info "Build time: $(format_time "${START}" "${END}")"
+# Print formatted message about script ending
+endscript
