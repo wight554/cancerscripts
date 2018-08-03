@@ -5,6 +5,10 @@ function parse_parameters()
 {
   while [[ "${#}" -ge 1 ]]; do
     case "${1}" in
+      "-bt"|"--buildtype")
+        shift && enforce_value "${@}"
+        BUILDTYPE="${1}" ;;
+
       "-r"|"--rom")
         shift && enforce_value "${@}"
         ROM="${1}" ;;
@@ -17,12 +21,6 @@ function parse_parameters()
         shift && enforce_value "${@}"
         PACKAGE="${1}" ;;
 
-      "-g"|"--gdrive")
-        export GDRIVE=true ;;
-
-      "-tg"|"--telegram")
-        export TELEGRAM=true ;;
-
       *) die "Invalid parameter specified!" ;;
     esac
     shift
@@ -31,6 +29,10 @@ function parse_parameters()
   # Default parameters
   [[ -z "${ROM}" ]] && ROM="abc"
   [[ -z "${DEVICE}" ]] && DEVICE="chiron"
+  [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
+
+  # Sanity checks
+  [[ "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test"
 }
 
 function buildpackage()
@@ -48,7 +50,7 @@ function filteroutput()
   # I don't want this hardcode to be here but it's needed :(
   for FILE in "${TMPOUTPUT[@]}"
   do
-    [[ ${FILE} =~ ${PACKAGE}*[^a-zA-Z] || $( echo ${FILE} | sed "s/.*\///" ) == ${PACKAGE} ]] && OUTPUT+=("${FILE}")
+    [[ "${FILE}" =~ "${PACKAGE}"*[^a-zA-Z] || "$( basename "${FILE}" )" == "${PACKAGE}" ]] && OUTPUT+=("${FILE}")
   done
   export OUTPUT
 }

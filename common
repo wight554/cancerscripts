@@ -35,12 +35,14 @@ CCACHE=$(command -v ccache)
 ######################
 
 # Alias for echo to print escape codes
-function echo() {
+function echo()
+{
   command echo -e "${@}"
 }
 
 # Prints a formatted info to point out what is being done to the user
-function header() {
+function header()
+{
   echo "${2}====$(for i in $(seq ${#1}); do echo "=\\c"; done)===="
   echo "==  ${1}  =="
   echo "====$(for i in $(seq ${#1}); do echo "=\\c"; done)====${RST}"
@@ -60,12 +62,14 @@ function warn() { echo "${YLW}${1}${RST}" 1>&2; }
 #########################
 
 # Start script with formatted message
-function startscript() {
+function startscript()
+{
   START="$(date +"%s")" && header "BUILD STARTED!" "${GRN}"
 }
 
 # End script with formatted message and build time
-function endscript() {
+function endscript()
+{
   if checkoutput; then header "BUILD COMPLETED!" "${GRN}"; else header "BUILD FAILED!" "${RED}"; fi
   END="$(date +"%s")"
   info "BUILD TIME: $(format_time "${START}" "${END}")"
@@ -76,7 +80,8 @@ function endscript() {
 }
 
 # Formats the time for the end
-function format_time() {
+function format_time()
+{
   MINS="$(((${2} - ${1}) / 60))"
   SECS="$(((${2} - ${1}) % 60))"
   if [[ "${MINS}" -ge 60 ]]
@@ -118,25 +123,28 @@ function format_time() {
 }
 
 # Changelog for specified repo (last week)
-generate_changelog() {
-  info "Generating changelog"
-  cd "${1}" || die "Repo doesn't exist"
-  if [[ -f "${CHANGELOG_PATH}" ]]
+function generate_changelog()
+{
+  if [[ -n "${CHANGELOG}" ]]
   then
-    rm -f "${CHANGELOG_PATH}"
+    cd "${1}" || die "Repo doesn't exist"
+    if [[ -f "${CHANGELOG_PATH}" ]]
+    then
+      rm -f "${CHANGELOG_PATH}"
+    fi
+    for i in $(seq 7)
+    do
+      AFTER="$(date --date="${i} days ago" +%F)"
+      UNTIL="$(date --date="$((i -1)) days ago" +%F)"
+      {
+        echo "####################"
+        echo "     ${AFTER}"
+        echo "####################"
+        git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
+        echo ""
+      } >> "${CHANGELOG_PATH}"
+    done
   fi
-  for i in $(seq 7)
-  do
-    AFTER="$(date --date="${i} days ago" +%F)"
-    UNTIL="$(date --date="$((i -1)) days ago" +%F)"
-  {
-    echo "####################"
-    echo "     ${AFTER}"
-    echo "####################"
-    git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
-    echo ""
-  } >> "${CHANGELOG_PATH}"
-  done
 }
 
 # Add trap for catching Ctrl-C
@@ -199,7 +207,8 @@ function ramdisk()
 }
 
 # Check if compilation output exists
-function checkoutput() {
+function checkoutput()
+{
   for i in $(seq 0 "$(("${#OUTPUT[@]}"-1))")
   do
     [[ -f "${OUTPUT[${i}]}" ]] || break
@@ -212,33 +221,62 @@ function checkoutput() {
 ########################
 
 # Notify Telegram chat about smth
-function telegram_notify() {
-  curl -s https://api.telegram.org/bot"${TOKEN}"/sendMessage -d text="${1}" -d chat_id="${CHATID}" >> /dev/null
+function telegram_notify()
+{
+  curl -s https://api.telegram.org/bot"${TOKEN}"/sendMessage -d parse_mode="Markdown" -d text="${1}" -d chat_id="${CHATID}" >> /dev/null
 }
 
 # Upload file to Telegram chat
-function telegram_upload() {
+function telegram_upload()
+{
   curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" -F chat_id="${CHATID}" >> /dev/null
 }
 
 # Checks which upload source is specified
-function checkupload() {
-  # Uploads a document to a Telegram chat (if it's not a ROM)
-  [[ -n "${TOKEN}" && -n "${CHATID}" && -n "${TELEGRAM}" && "${OUTPUT,,}" != *"${ROM}"* ]] && info "Uploading $( echo ${1} | sed "s/.*\///" ) to Telegram..." && telegram_upload "${1}"
-  # Uploads a document to Google Drive
-  [[ -n "${GDRIVE}" ]] && info "Uploading $( echo ${1} | sed "s/.*\///" ) to Google Drive..." &&  gdrive upload "${1}"
+function output_upload()
+{
+  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
+  FILENAME="$( basename "${1}" )"
+  if [[ -n "${TELEGRAM}" ]]
+  then
+    [[ -z "${TOKEN}" || -z "${CHATS}" ]]
+    warn "File can't be uploaded to Telegram, bot token and chat id are not specified!"
+  fi
+  if [[ "${BUILDTYPE}" == "test" || "${BUILDTYPE}" == "personal" ]]
+  then
+    if [[ "${FILENAME,,}" ==  "${ROM}-"* ]]
+    then
+      info "Uploading ${FILENAME} to cergo666.tk..." && curl -T "${1}" -u "${FTPLOGPASS}" ftp://cergo666.tk/"$( basename "${1}" )"
+      telegram_notify "${FILENAME} can be downloaded [here](http://cergo666.tk/wight554/$( basename "${1}" ))"
+    else
+      telegram_notify "${FILENAME} is ready, uploading!"
+      info "Uploading ${FILENAME} to Telegram..." && telegram_upload "${1}"
+    fi
+  elif [[ "${BUILDTYPE}" == "release" && "${FILENAME,,}" == "abc-"* ]]
+  then
+    rsync -av -e ssh "${1}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
+    telegram_notify "Release build ${FILENAME} can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${1}" ))"
+  fi
+}
+
+function changelog_upload()
+{
+  if [[ -f "${1}" ]]
+  then
+    [[ "${ROM}" != "aosip" || "${FILENAME,,}" == "abc-"* && "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${1}"
+    [[ "${BUILDTYPE}" == "release" && "${FILENAME,,}" == "abc-"* ]] && rsync -av -e ssh "${1}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}" && telegram_notify "Changelog can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${1}" ))"
+  fi
 }
 
 # Uploads all the things to specified place
 function upload() {
   # Check if everything is fine
-  if checkoutput 
+  if checkoutput
   then
-    [[ -z "${ROM}" && -n "${TELEGRAM}"  ]] && telegram_notify "${KERNEL_NAME} ${DATE} for ${DEVICE} is ready, uploading!"
     for FILE in "${OUTPUT[@]}"
     do
-      checkupload "${FILE}"
+      output_upload "${FILE}"
     done
-    [[ -n "${CHANGELOG}"  ]] && checkupload "${CHANGELOG_PATH}"
+    changelog_upload "${CHANGELOG_PATH}"
   fi
 }

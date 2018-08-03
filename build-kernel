@@ -5,22 +5,17 @@ function parse_parameters()
 {
   while [[ "${#}" -ge 1 ]]; do
     case "${1}" in
+      "-bt"|"--buildtype")
+        shift && enforce_value "${@}"
+        BUILDTYPE="${1}" ;;
+
       "-d"|"--device")
         shift && enforce_value "${@}"
         DEVICE="${1}" ;;
 
       "-t"|"--toolchain")
         shift && enforce_value "${@}"
-        TOOLCHAIN="${1}" ;;
-
-      "-c"|"--changelog")
-        export CHANGELOG=true ;;
-
-      "-g"|"--gdrive")
-        export GDRIVE=true ;;
-
-      "-tg"|"--telegram")
-        export TELEGRAM=true ;;
+        TOOLCHAIN="${1}" ;;    
 
       "-C"|"--clean")
         CLEAN=true ;;
@@ -32,18 +27,17 @@ done
   # Default parameters
   [[ -z "${DEVICE}" ]] && DEVICE="chiron"
   [[ -z "${TOOLCHAIN}" ]] && TOOLCHAIN="clang"
+  [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
+
+  # Sanity checks
+  [[ "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test"
+  [[ "${TOOLCHAIN}" != "clang" && "${TOOLCHAIN}" != "gcc" ]] && die "Dafuq u wanna build with?"
 }
 
 function enviroment()
 {
   info "Setting up build enviroment.."
   sleep 1
-
-  # Check TC
-  if [[ "${TOOLCHAIN}" != "clang" && "${TOOLCHAIN}" != "gcc" ]]
-  then
-    die "Dafuq u wanna build with?"
-  fi
 
   # Build dirs
   KERNEL_DIR="${HOME}/linux/${DEVICE}"
@@ -129,11 +123,11 @@ function buildkernel()
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Print formatted message about build start
+# If parameters are satisfied, print formatted message about build start
+parse_parameters "${@}"
 startscript
 
-# Parse parameters and setup enviroment
-parse_parameters "${@}"
+# Setup enviroment
 enviroment
 
 # Cleanup
@@ -144,6 +138,9 @@ buildkernel
 
 # Make Anykernel2 zip
 ramdisk
+
+# Generate changelog
+generate_changelog "${KERNEL_DIR}"
 
 # Upload if needed
 upload

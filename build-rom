@@ -5,6 +5,10 @@ function parse_parameters()
 {
   while [[ "${#}" -ge 1 ]]; do
     case "${1}" in
+      "-bt"|"--buildtype")
+        shift && enforce_value "${@}"
+        BUILDTYPE="${1}" ;;
+
       "-d"|"--device")
         shift && enforce_value "${@}"
         DEVICE="${1}" ;;
@@ -12,12 +16,6 @@ function parse_parameters()
       "-r"|"--rom")
         shift && enforce_value "${@}"
         ROM="${1}" ;;
-
-      "-g"|"--gdrive")
-        export GDRIVE=true ;;
-
-      "-tg"|"--telegram")
-        export TELEGRAM=true ;;
 
       "-o"|"--off")
         export POWEROFF=true ;;
@@ -36,6 +34,11 @@ function parse_parameters()
   # Default parameters
   [[ -z "${ROM}" ]] && ROM="abc"
   [[ -z "${DEVICE}" ]] && DEVICE="chiron"
+  [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
+
+  # Sanity checks
+  [[ "${ROM}" == "abc" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" && "${BUILDTYPE}" != "release" ]] && die "Choose build type between personal, release and test!"
+  [[ "${ROM}" == "aosip" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test!"
 }
 
 # Pretty small one
@@ -74,6 +77,7 @@ function buildrom()
 
   # Output files
   OUTPUT="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
+  [ "${ROM}" == "abc" ]
   CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
   export OUTPUT CHANGELOG_PATH
 }
@@ -85,11 +89,11 @@ function buildrom()
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
 
-# Print formatted message about build start
+# If parameters are satisfied, print formatted message about build start
+parse_parameters "${@}"
 startscript
 
-# Parse parameters and setup enviroment
-parse_parameters "${@}"
+# Setup enviroment
 romenviroment
 
 # Sync if needed
