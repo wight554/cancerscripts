@@ -254,7 +254,8 @@ function output_upload()
     then
       info "Uploading ${FILENAME} to cergo666.tk..." && curl -T "${1}" -u "${FTPLOGPASS}" ftp://cergo666.tk/"$( basename "${1}" )"
       telegram_notify "${FILENAME} can be downloaded [here](http://cergo666.tk/wight554/$( basename "${1}" ))"
-    else
+    elif [[ -n "${FILENAME}" ]]
+    then
       telegram_notify "${FILENAME} is ready, uploading!"
       info "Uploading ${FILENAME} to Telegram..." && telegram_upload "${1}"
     fi
