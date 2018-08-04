@@ -187,6 +187,12 @@ function romenviroment()
   then
     LANG="" LC_ALL=C lunch "aosip_${DEVICE}-userdebug"
   fi
+
+  # Use latest clang and gcc for rom kernel compilation
+  # Keep it common to prevent enviromt variables be changed each rom enviroment setup
+  export KERNEL_TOOLCHAIN="${HOME}/toolchains/gnu-gcc-8.x/bin"
+  export TARGET_KERNEL_CROSS_COMPILE_PREFIX="aarch64-linux-gnu-"
+  export TARGET_KERNEL_CLANG_PATH="${HOME}/toolchains/own-clang-8.x/bin"
 }
 
 #  Zipping AnyKernel2
