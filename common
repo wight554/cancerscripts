@@ -270,7 +270,7 @@ function changelog_upload()
 {
   if [[ -f "${1}" ]]
   then
-    [[ "${ROM}" != "aosip" || "${FILENAME,,}" == "abc-"* && "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${1}"
+    [[ "${ROM}" != "aosip" || "${FILENAME,,}" == "abc-"* ]] && [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${1}"
     [[ "${BUILDTYPE}" == "release" && "${FILENAME,,}" == "abc-"* ]] && rsync -av -e ssh "${1}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}" && telegram_notify "Changelog can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${1}" ))"
   fi
 }
