@@ -75,7 +75,7 @@ function endscript()
   info "BUILD TIME: $(format_time "${START}" "${END}")"
   if [[ -n "${POWEROFF}" ]]
   then
-    poweroff || sudo poweroff
+    poweroff 2>/dev/null || sudo poweroff
   fi
 }
 
