@@ -53,10 +53,15 @@ function enviroment()
   # Changelog
   export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
 
-  # GCC paths variables
-  GCC_FOLDER="${HOME}/toolchains/gnu-gcc-8.x"
-  GCC="$(find "${GCC_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
-  CC="${GCC%gcc}"
+  # GCC 64-bin paths variables
+  GCC_64_FOLDER="${HOME}/toolchains/gnu-gcc-8.x-arm64"
+  GCC_64="$(find "${GCC_64_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
+  CC_64="${GCC_64%gcc}"
+
+  # GCC 32-bit paths variables
+  GCC_32_FOLDER="${HOME}/toolchains/gnu-gcc-8.x-arm"
+  GCC_32="$(find "${GCC_32_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
+  CC_32="${GCC_32%gcc}"
 
   # Clang paths variables
   CLANG_FOLDER="${HOME}/toolchains/own-clang-8.x/"
@@ -105,13 +110,15 @@ function buildkernel()
 		CLANG_TRIPLE="aarch64-linux-gnu-" \
 		KBUILD_COMPILER_STRING="${CLANG_VERSION}" \
 		KCFLAGS="${KCFLAGS}" \
-		CROSS_COMPILE="${CC}" \
+		CROSS_COMPILE="${CC_64}" \
+    CROSS_COMPILE_ARM32="${CC_32}" \
 		Image.gz-dtb
   elif [ "${TOOLCHAIN}" == "gcc" ]
   then
     make O="${BUILD_DIR}" "${JOBS_FLAG}" \
 		ARCH="arm64" \
-		CROSS_COMPILE="${CCACHE} ${CC}" \
+		CROSS_COMPILE="${CCACHE} ${CC_64}" \
+    CROSS_COMPILE_ARM32="${CC_32}" \
 		Image.gz-dtb
   fi
 }
