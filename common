@@ -173,7 +173,7 @@ function romenviroment()
     breakfast "${DEVICE}-userdebug"
   elif [ "${ROM}" == "aosip" ]
   then
-    LANG="" LC_ALL=C lunch "aosip_${DEVICE}-userdebug"
+    lunch "aosip_${DEVICE}-userdebug"
   fi
 }
 
