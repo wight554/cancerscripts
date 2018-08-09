@@ -43,18 +43,23 @@ function echo()
 # Prints a formatted info to point out what is being done to the user
 function header()
 {
-  echo "${2}====$(for i in $(seq ${#1}); do echo "=\\c"; done)===="
+  echo "${2}"
+  echo "====$(for i in $(seq ${#1}); do echo "=\\c"; done)===="
   echo "==  ${1}  =="
-  echo "====$(for i in $(seq ${#1}); do echo "=\\c"; done)====${RST}"
+  echo "====$(for i in $(seq ${#1}); do echo "=\\c"; done)===="
+  echo "${RST}"
 }
 
-# Prints an error in bold red and exits the script
+# Prints an error in red and exits the script
 function die() { echo "${RED}${1}${RST}" 1>&2; exit 1; }
 
-# Prints an info message in bold blue
+# Prints an error message in red
+function error() { echo "${RED}${1}${RST}" 1>&2; }
+
+# Prints an info message in blue
 function info() { echo "${BLUE}${1}${RST}" 1>&2; }
 
-# Prints a success message in bold green
+# Prints a warn message in green
 function warn() { echo "${YLW}${1}${RST}" 1>&2; }
 
 #########################
@@ -70,13 +75,20 @@ function startscript()
 # End script with formatted message and build time
 function endscript()
 {
-  if checkoutput; then header "BUILD COMPLETED!" "${GRN}"; else header "BUILD FAILED!" "${RED}"; fi
+  if [[ -n "${1}" ]]
+  then
+    error "${1}"
+    header "BUILD FAILED!" "${RED}"
+  else
+    header "BUILD COMPLETED!" "${GRN}"
+  fi
   END="$(date +"%s")"
   info "BUILD TIME: $(format_time "${START}" "${END}")"
   if [[ -n "${POWEROFF}" ]]
   then
     poweroff 2>/dev/null || sudo poweroff
   fi
+  die "" # Just in case
 }
 
 # Formats the time for the end
@@ -122,31 +134,6 @@ function format_time()
   echo "${TIME_STRING}"
 }
 
-# Changelog for specified repo (last week)
-function generate_changelog()
-{
-  if [[ -n "${CHANGELOG}" ]]
-  then
-    cd "${1}" || die "Repo doesn't exist"
-    if [[ -f "${CHANGELOG_PATH}" ]]
-    then
-      rm -f "${CHANGELOG_PATH}"
-    fi
-    for i in $(seq 7)
-    do
-      AFTER="$(date --date="${i} days ago" +%F)"
-      UNTIL="$(date --date="$((i -1)) days ago" +%F)"
-      {
-        echo "####################"
-        echo "     ${AFTER}"
-        echo "####################"
-        git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
-        echo ""
-      } >> "${CHANGELOG_PATH}"
-    done
-  fi
-}
-
 # Add trap for catching Ctrl-C
 trap 'echo; die "Manually aborted!"' SIGINT SIGTERM
 
@@ -167,15 +154,16 @@ function romenviroment()
   # Build dirs
   export ROM_PATH="${HOME}/${ROM}"
   export BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
+  info "${BUILD_PATH}"
 
   # Check ROM
   if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
   then
-    die "Only ABC and AOSIP are supported!"
+    endscript "Only ABC and AOSIP are supported!"
   fi
 
   # Setup environment
-  cd "${ROM_PATH}" || die "ROM dir doesn't exist!"
+  cd "${ROM_PATH}" || endscript "ROM dir doesn't exist!"
   source "${ROM_PATH}/build/envsetup.sh"
 
   # Set the device
@@ -198,6 +186,8 @@ function romenviroment()
 #  Zipping AnyKernel2
 function ramdisk()
 {
+  info "${COMPILED_IMAGE}"
+  [[ -f "${COMPILED_IMAGE}" ]] || endscript "Kernel image doesn't exist!"
   # Common paths
   AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
   KERNEL_NAME="PlaceholderKernel"
@@ -208,7 +198,7 @@ function ramdisk()
   mv -f "${COMPILED_IMAGE}" "${AK2_PATH}/Image.gz-dtb"
 
   # Create flashable AnyKernel2 zip
-  cd "${AK2_PATH}" || die "AnyKernel2 folder doesn't exist!"
+  cd "${AK2_PATH}" || endscript "AnyKernel2 folder doesn't exist!"
   zip -r9 "${OUTPUT}" ./* -x "README.md" -x "./*.zip"
 }
 
@@ -217,7 +207,7 @@ function checkoutput()
 {
   for i in $(seq 0 "$(("${#OUTPUT[@]}"-1))")
   do
-    [[ -f "${OUTPUT[${i}]}" ]] || break
+    [[ -f "${OUTPUT[${i}]}" && -n "${OUTPUT[${i}]}" ]] || endscript "Nothing to proceed with, output is empty!"
   done && return
   false
 }
@@ -238,52 +228,13 @@ function telegram_upload()
   curl -s https://api.telegram.org/bot"${TOKEN}"/sendDocument -F document=@"${1}" -F chat_id="${CHATID}" >> /dev/null
 }
 
-# Checks which upload source is specified
-function output_upload()
-{
-  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
-  FILENAME="$( basename "${1}" )"
-  if [[ -n "${TELEGRAM}" ]]
-  then
-    [[ -z "${TOKEN}" || -z "${CHATS}" ]]
-    warn "File can't be uploaded to Telegram, bot token and chat id are not specified!"
-  fi
-  if [[ "${BUILDTYPE}" == "test" || "${BUILDTYPE}" == "personal" ]]
-  then
-    if [[ "${FILENAME,,}" ==  "${ROM}-"* ]]
-    then
-      info "Uploading ${FILENAME} to cergo666.tk..." && curl -T "${1}" -u "${FTPLOGPASS}" ftp://cergo666.tk/"$( basename "${1}" )"
-      telegram_notify "${FILENAME} can be downloaded [here](http://cergo666.tk/wight554/$( basename "${1}" ))"
-    elif [[ -n "${FILENAME}" ]]
-    then
-      telegram_notify "${FILENAME} is ready, uploading!"
-      info "Uploading ${FILENAME} to Telegram..." && telegram_upload "${1}"
-    fi
-  elif [[ "${BUILDTYPE}" == "release" && "${FILENAME,,}" == "abc-"* ]]
-  then
-    rsync -av -e ssh "${1}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
-    telegram_notify "Release build ${FILENAME} can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${1}" ))"
-  fi
-}
-
-function changelog_upload()
-{
-  if [[ -f "${1}" ]]
-  then
-    [[ "${ROM}" != "aosip" || "${FILENAME,,}" == "abc-"* ]] && [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${1}"
-    [[ "${BUILDTYPE}" == "release" && "${FILENAME,,}" == "abc-"* ]] && rsync -av -e ssh "${1}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}" && telegram_notify "Changelog can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${1}" ))"
-  fi
-}
-
 # Uploads all the things to specified place
-function upload() {
+function personal_upload() {
+  # Proper chatid
+  CHATID="${PM}"
   # Check if everything is fine
-  if checkoutput
-  then
-    for FILE in "${OUTPUT[@]}"
-    do
-      output_upload "${FILE}"
-    done
-    changelog_upload "${CHANGELOG_PATH}"
-  fi
+  for FILE in "${OUTPUT[@]}"
+  do
+    info "Uploading $( basename "${FILE}" ) to Telegram..." && telegram_upload "${FILE}"
+  done
 }

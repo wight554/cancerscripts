@@ -39,6 +39,7 @@ function parse_parameters()
   # Sanity checks
   [[ "${ROM}" == "abc" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" && "${BUILDTYPE}" != "release" ]] && die "Choose build type between personal, release and test!"
   [[ "${ROM}" == "aosip" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test!"
+  [[ -z "${TOKEN}" && -z "${CHATID}" ]] && die "Telegram bot checks are not satisfied!"
 }
 
 # Pretty small one
@@ -72,14 +73,30 @@ function buildrom()
     mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
   elif [ "${ROM}" == "aosip" ]
   then
-    time mka kronic 2>&1 | tee "${HOME}/logs/build.log"
+    time mka kronic 2>&1 | tee "${HOME}/logs/buildrom.log"
   fi
 
   # Output files
   OUTPUT="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
-  [ "${ROM}" == "abc" ]
-  CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
-  export OUTPUT CHANGELOG_PATH
+  [ "${ROM}" == "abc" ] && CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
+}
+
+function upload()
+{
+  checkoutput || endscript "failed"
+  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
+  FILENAME="$( basename "${OUTPUT}" )"
+  if [ "${BUILDTYPE}" == "release" ]
+  then
+    rsync -av -e ssh "${OUTPUT}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
+    telegram_notify "Release build ${FILENAME} can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/${FILENAME}"
+    rsync -av -e ssh "${CHANGELOG_PATH}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
+    telegram_notify "Changelog can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${CHANGELOG_PATH}" )"
+  else
+    info "Uploading ${FILENAME} to cergo666.tk..." && curl -T "${OUTPUT}" -u "${FTPLOGPASS}" ftp://cergo666.tk/"${FILENAME}"
+    telegram_notify "${FILENAME} can be downloaded [here](http://cergo666.tk/wight554/${FILENAME}"
+    [[ "${FILENAME,,}" == "abc-"*  && "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
+  fi
 }
 
 #####################
@@ -104,6 +121,9 @@ clean
 
 # Compile ROM
 buildrom
+
+# Check if compilation is fine
+checkoutput
 
 # Upload if needed
 upload

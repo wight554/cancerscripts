@@ -15,7 +15,7 @@ function parse_parameters()
 
       "-t"|"--toolchain")
         shift && enforce_value "${@}"
-        TOOLCHAIN="${1}" ;;    
+        TOOLCHAIN="${1}" ;;
 
       "-C"|"--clean")
         CLEAN=true ;;
@@ -32,6 +32,7 @@ done
   # Sanity checks
   [[ "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test"
   [[ "${TOOLCHAIN}" != "clang" && "${TOOLCHAIN}" != "gcc" ]] && die "Dafuq u wanna build with?"
+  [[ -z "${TOKEN}" && -z "${CHATID}" ]] && die "Telegram bot checks are not satisfied!"
 }
 
 function enviroment()
@@ -97,7 +98,7 @@ function clean()
 function buildkernel()
 {
   # Open kernel directory
-  cd "${KERNEL_DIR}" || die "Kernel directory doesn't exist!"
+  cd "${KERNEL_DIR}" || endscript "Kernel directory doesn't exist!"
   info "Compiling kernel..."
   # Generate defconfig
   make -s ARCH="arm64" O="${BUILD_DIR}" "${DEFCONFIG}" "${JOBS_FLAG}"
@@ -120,6 +121,40 @@ function buildkernel()
 		CROSS_COMPILE="${CCACHE} ${CC_64}" \
     CROSS_COMPILE_ARM32="${CC_32}" \
 		Image.gz-dtb
+  fi
+}
+
+# Changelog for specified repo (last week)
+function generate_changelog()
+{
+  cd "${KERNEL_DIR}" || endscript "Kernel dir doesn't exist!"
+  if [[ -f "${CHANGELOG_PATH}" ]]
+  then
+    rm -f "${CHANGELOG_PATH}"
+  fi
+  for i in $(seq 7)
+  do
+    AFTER="$(date --date="${i} days ago" +%F)"
+    UNTIL="$(date --date="$((i -1)) days ago" +%F)"
+    {
+      echo "####################"
+      echo "     ${AFTER}"
+      echo "####################"
+      git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
+      echo ""
+    } >> "${CHANGELOG_PATH}"
+  done
+}
+
+function upload()
+{
+  if [[ "${BUILDTYPE}" == "test" ]]
+  then
+    telegram_notify "$( basename "${OUTPUT}" ) is ready, uploading!"
+    info "Uploading $( basename "${OUTPUT}" ) to Telegram..." && telegram_upload "${OUTPUT}"
+    info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
+  else
+    personal_upload
   fi
 }
 
@@ -146,8 +181,11 @@ buildkernel
 # Make Anykernel2 zip
 ramdisk
 
+# Check if compilation is fine
+checkoutput
+
 # Generate changelog
-generate_changelog "${KERNEL_DIR}"
+generate_changelog
 
 # Upload if needed
 upload

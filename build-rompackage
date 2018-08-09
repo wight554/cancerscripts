@@ -33,13 +33,15 @@ function parse_parameters()
 
   # Sanity checks
   [[ "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test"
+  [[ -z "${PACKAGE}" ]] && die "Package should be specified!"
+  [[ -z "${TOKEN}" && -z "${CHATID}" ]] && die "Telegram bot checks are not satisfied!"
 }
 
 function buildpackage()
 {
-  # Package should be specified
-  [[ -z "${PACKAGE}" ]] && die "Package should be specified!"
-  [[ -n "${PACKAGE}" ]] && info "Compiling ${PACKAGE} for ${DEVICE}..."; make "${PACKAGE}"
+  # Compilation
+  info "Compiling ${PACKAGE} for ${DEVICE}..."
+  make "${PACKAGE}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
 }
 
 function filteroutput()
@@ -75,8 +77,11 @@ buildpackage
 # Filter output packages
 filteroutput
 
+# Check if compilation is fine
+checkoutput
+
 # Upload if needed
-upload
+personal_upload
 
 # Print formatted message about script ending
 endscript
