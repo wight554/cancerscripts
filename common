@@ -154,7 +154,6 @@ function romenviroment()
   # Build dirs
   export ROM_PATH="${HOME}/${ROM}"
   export BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
-  info "${BUILD_PATH}"
 
   # Check ROM
   if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
@@ -180,7 +179,6 @@ function romenviroment()
 #  Zipping AnyKernel2
 function ramdisk()
 {
-  info "${COMPILED_IMAGE}"
   [[ -f "${COMPILED_IMAGE}" ]] || endscript "Kernel image doesn't exist!"
   # Common paths
   AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
