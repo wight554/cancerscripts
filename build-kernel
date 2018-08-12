@@ -141,7 +141,7 @@ function generate_changelog()
     UNTIL="$(date --date="$((i -1)) days ago" +%F)"
     {
       echo "####################"
-      echo "     ${AFTER}"
+      echo "     ${UNTIL}"
       echo "####################"
       git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
       echo ""
