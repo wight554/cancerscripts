@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Copyright (C) Volodymyr Zhdanov <wight554@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-only
+
 # Setup compiler stuff
 export USE_CCACHE=1
 /usr/bin/ccache -M 50G
