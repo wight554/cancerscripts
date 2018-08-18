@@ -159,9 +159,9 @@ function romenviroment()
   export BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
 
   # Check ROM
-  if [[ "${ROM}" != "abc" && "${ROM}" != "aosip" ]]
+  if [[ "${ROM}" != "abc" && "${ROM}" != "nitrogen" ]]
   then
-    endscript "Only ABC and AOSIP are supported!"
+    endscript "Only ABC and NitrogenOS are supported!"
   fi
 
   # Setup environment
@@ -173,9 +173,9 @@ function romenviroment()
   if [ "${ROM}" == "abc" ]
   then
     breakfast "${DEVICE}-userdebug"
-  elif [ "${ROM}" == "aosip" ]
+  elif [ "${ROM}" == "nitrogen" ]
   then
-    lunch "aosip_${DEVICE}-userdebug"
+    lunch "nitrogen_${DEVICE}-userdebug"
   fi
 }
 

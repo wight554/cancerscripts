@@ -35,13 +35,13 @@ function parse_parameters()
   done
 
   # Default parameters
-  [[ -z "${ROM}" ]] && ROM="abc"
+  [[ -z "${ROM}" ]] && ROM="nitrogen"
   [[ -z "${DEVICE}" ]] && DEVICE="chiron"
   [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
 
   # Sanity checks
   [[ "${ROM}" == "abc" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" && "${BUILDTYPE}" != "release" ]] && die "Choose build type between personal, release and test!"
-  [[ "${ROM}" == "aosip" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test!"
+  [[ "${ROM}" == "nitrogen" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test!"
   [[ -z "${TOKEN}" && -z "${CHATID}" ]] && die "Telegram bot checks are not satisfied!"
 }
 
@@ -71,17 +71,12 @@ function buildrom()
 {
   #  Start compilation
   info "Compiling ${ROM} for ${DEVICE}..."
-  if [ "${ROM}" == "abc" ]
-  then
-    make otapackage "${JOBS_FLAG}" 2>&1 | tee "${HOME}/logs/buildrom.log"
-  elif [ "${ROM}" == "aosip" ]
-  then
-    time mka kronic 2>&1 | tee "${HOME}/logs/buildrom.log"
-  fi
+  make otapackage "${JOBS_FLAG}" 2>&1 | tee "${HOME}/logs/buildrom.log"
 
   # Output files
   OUTPUT="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
   [ "${ROM}" == "abc" ] && CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
+  [ "${ROM}" == "nitrogen" ] && CHANGELOG_PATH="${ROM_PATH}/out/target/product/${DEVICE}/nitrogen_${DEVICE}-Changelog.txt"
 }
 
 function upload()
@@ -98,7 +93,7 @@ function upload()
   else
     info "Uploading ${FILENAME} to cergo666.tk..." && curl -T "${OUTPUT}" -u "${FTPLOGPASS}" ftp://cergo666.tk/"${FILENAME}"
     telegram_notify "${FILENAME} can be downloaded [here](http://cergo666.tk/wight554/${FILENAME}"
-    [[ "${FILENAME,,}" == "abc-"*  && "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
+    [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
   fi
 }
 

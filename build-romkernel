@@ -29,7 +29,7 @@ function parse_parameters()
   done
 
   # Default parameters
-  [[ -z "${ROM}" ]] && ROM="abc"
+  [[ -z "${ROM}" ]] && ROM="nitrogen"
   [[ -z "${DEVICE}" ]] && DEVICE="chiron"
   [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
 
