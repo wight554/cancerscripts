@@ -73,7 +73,7 @@ function buildrom()
   info "Compiling ${ROM} for ${DEVICE}..."
   if [ "${ROM}" == "abc" ]
   then
-    mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
+    make otapackage 2>&1 | tee "${HOME}/logs/buildrom.log"
   elif [ "${ROM}" == "aosip" ]
   then
     time mka kronic 2>&1 | tee "${HOME}/logs/buildrom.log"
