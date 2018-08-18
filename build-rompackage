@@ -53,12 +53,12 @@ function buildpackage()
 function filteroutput()
 {
   # Split output files into array for upload
-  mapfile -t TMPOUTPUT < <(find "${ROM_PATH}/out/target/product/${DEVICE}/"{system,vendor} -name "${PACKAGE}*" -type f )
+  mapfile -t TMPOUTPUT < <(find "${ROM_PATH}/out/target/product/${DEVICE}/"{system,vendor} -name "${PACKAGE}*" -type f 2>/dev/null)
 
   # I don't want this hardcode to be here but it's needed :(
   for FILE in "${TMPOUTPUT[@]}"
   do
-    [[ "${FILE}" =~ "${PACKAGE}"*[^a-zA-Z] || "$( basename "${FILE}" )" == "${PACKAGE}" ]] && OUTPUT+=("${FILE}")
+    [[ "${FILE}" =~ "${PACKAGE}"*[^a-zA-Z^_] || "$( basename "${FILE}" )" == "${PACKAGE}" ]] && OUTPUT+=("${FILE}")
   done
   export OUTPUT
 }
