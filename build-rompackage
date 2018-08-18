@@ -43,11 +43,11 @@ function parse_parameters()
 function buildpackage()
 {
   # Cleanup first
-  make installclean
+  make installclean "${JOBS_FLAG}"
 
   # Compilation
   info "Compiling ${PACKAGE} for ${DEVICE}..."
-  make "${PACKAGE}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
+  make "${PACKAGE} ${JOBS_FLAG}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
 }
 
 function filteroutput()
