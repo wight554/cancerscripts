@@ -42,6 +42,9 @@ function parse_parameters()
 
 function buildpackage()
 {
+  # Cleanup first
+  make installclean
+
   # Compilation
   info "Compiling ${PACKAGE} for ${DEVICE}..."
   make "${PACKAGE}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
