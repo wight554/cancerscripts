@@ -82,8 +82,8 @@ function buildrom()
 function upload()
 {
   checkoutput || endscript "failed"
-  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
   FILENAME="$( basename "${OUTPUT}" )"
+  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}" && FILENAME=${FILENAME/./-UNSTABLE.}
   if [ "${BUILDTYPE}" == "release" ]
   then
     rsync -av -e ssh "${OUTPUT}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
