@@ -70,7 +70,7 @@ function enviroment()
   # Clang paths variables
   CLANG_FOLDER="${HOME}/toolchains/own-clang-8.x/"
   CLANG="${CLANG_FOLDER}/bin/clang"
-  CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')"
+  CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' -e 's/ (.*)//')"
 
   # Optimizations (clang only)
   if [ "${TOOLCHAIN}" == "clang" ]
