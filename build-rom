@@ -108,11 +108,11 @@ source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/c
 parse_parameters "${@}"
 startscript
 
-# Sync if needed
-sync
-
 # Setup enviroment
 romenviroment
+
+# Sync if needed
+sync
 
 # Cleanup
 clean
