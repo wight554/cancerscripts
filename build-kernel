@@ -57,32 +57,14 @@ function enviroment()
   # Changelog
   export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
 
-  # GCC 64-bin paths variables
-  GCC_64_FOLDER="${HOME}/toolchains/gnu-gcc-8.x-arm64"
-  GCC_64="$(find "${GCC_64_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
-  CC_64="${GCC_64%gcc}"
-
-  # GCC 32-bit paths variables
-  GCC_32_FOLDER="${HOME}/toolchains/gnu-gcc-8.x-arm"
-  GCC_32="$(find "${GCC_32_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
-  CC_32="${GCC_32%gcc}"
+  # GCC variables
+  CC_32="arm-linux-gnueabi-"
+  CC_64="aarch64-linux-gnu-"
 
   # Clang paths variables
-  CLANG_FOLDER="${HOME}/toolchains/own-clang-8.x/"
+  CLANG_FOLDER="$(find "${HOME}"/toolchains/linux-x86/clang-r* -maxdepth 0 -type d | tail -1)"
   CLANG="${CLANG_FOLDER}/bin/clang"
-  CLANG_VERSION="$(${CLANG} --version | head -n 1 | perl -pe 's/(  | |)\(.*?\)//g')"
-
-  # Optimizations (clang only)
-  if [ "${TOOLCHAIN}" == "clang" ]
-  then
-    KCFLAGS="-mllvm -polly \
-      -mllvm -polly-run-dce \
-      -mllvm -polly-run-inliner \
-      -mllvm -polly-opt-fusion=max \
-      -mllvm -polly-ast-use-context \
-      -mllvm -polly-vectorizer=stripmine \
-      -mllvm -polly-detect-keep-going"
-  fi
+  CLANG_VERSION="$("${CLANG}" --version | head -n 1 | perl -pe 's/(  | |)\(.*?\)//g')"
 }
 function clean()
 {
