@@ -40,8 +40,7 @@ function parse_parameters()
   [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
 
   # Sanity checks
-  [[ "${ROM}" == "abc" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" && "${BUILDTYPE}" != "release" ]] && die "Choose build type between personal, release and test!"
-  [[ "${ROM}" == "nitrogen" && "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" ]] && die "Choose build type between personal and test!"
+  [[ "${BUILDTYPE}" != "personal" && "${BUILDTYPE}" != "test" && "${BUILDTYPE}" != "release" ]] && die "Choose build type between personal, release and test!"
   [[ -z "${TOKEN}" && -z "${CHATID}" ]] && die "Telegram bot checks are not satisfied!"
 }
 
@@ -84,17 +83,10 @@ function upload()
   checkoutput || endscript "failed"
   FILENAME="$( basename "${OUTPUT}" )"
   [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}" && FILENAME=${FILENAME/./-UNSTABLE.}
-  if [ "${BUILDTYPE}" == "release" ]
-  then
-    rsync -av -e ssh "${OUTPUT}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
-    telegram_notify "Release build ${FILENAME} can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/${FILENAME}"
-    rsync -av -e ssh "${CHANGELOG_PATH}" wight554@web.sourceforge.net:/home/frs/project/abc-rom/"${DEVICE}"
-    telegram_notify "Changelog can be downloaded [here](home/frs/project/abc-rom/${DEVICE}/$( basename "${CHANGELOG_PATH}" )"
-  else
-    info "Uploading ${FILENAME} to cergo666.tk..." && curl -T "${OUTPUT}" -u "${FTPLOGPASS}" ftp://cergo666.tk/"${FILENAME}"
-    telegram_notify "${FILENAME} can be downloaded [here](http://cergo666.tk/wight554/${FILENAME}"
-    [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
-  fi
+  [[ "${BUILDTYPE}" == "test" ]] && FILENAME=${FILENAME/./-TEST.}
+  info "Uploading ${FILENAME} to wight554.tk..." && curl -T "${OUTPUT}" -u "${FTPLOGPASS}" ftp://wight554.tk/"${ROM}/${FILENAME}"
+  telegram_notify "${FILENAME} can be downloaded [here](http://wight554.tk/${ROM}/${FILENAME}"
+  [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
 }
 
 #####################
