@@ -47,11 +47,11 @@ function buildpackage()
   export WITH_DEXPREOPT_BOOT_IMG_AND_SYSTEM_SERVER_ONLY=true
 
   # Cleanup first
-  make installclean "${JOBS_FLAG}"
+  mka installclean
 
   # Compilation
   info "Compiling ${PACKAGE} for ${DEVICE}..."
-  make "${PACKAGE} ${JOBS_FLAG}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
+  mka "${PACKAGE}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
 }
 
 function filteroutput()
