@@ -157,6 +157,7 @@ function romenviroment()
   # Build dirs
   export ROM_PATH="${HOME}/${ROM}"
   export BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
+  export CCACHE_DIR="${HOME}/.ccache-${ROM}"
 
   # Check ROM
   if [[ "${ROM}" != "abc" && "${ROM}" != "nitrogen" ]]
