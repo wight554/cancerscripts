@@ -29,7 +29,7 @@ function parse_parameters()
 done
   # Default parameters
   [[ -z "${DEVICE}" ]] && DEVICE="chiron"
-  [[ -z "${TOOLCHAIN}" ]] && TOOLCHAIN="clang"
+  [[ -z "${TOOLCHAIN}" ]] && TOOLCHAIN="gcc"
   [[ -z "${BUILDTYPE}" ]] && BUILDTYPE="personal"
 
   # Sanity checks
@@ -57,9 +57,15 @@ function enviroment()
   # Changelog
   export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
 
-  # GCC variables
-  CC_32="arm-linux-gnueabi-"
-  CC_64="aarch64-linux-gnu-"
+  # GCC 32-bit paths variables
+  GCC_32_FOLDER="${HOME}/toolchains/gcc-arm-8.x-arm-linux-gnueabi"
+  GCC_32="$(find "${GCC_32_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
+  CC_32="${GCC_32%gcc}"
+
+  # GCC 64-bin paths variables
+  GCC_64_FOLDER="${HOME}/toolchains/gcc-arm-8.x-aarch64-linux-gnu"
+  GCC_64="$(find "${GCC_64_FOLDER}/bin" \( -type f -o -type l \) -name '*-gcc' | head -n1)"
+  CC_64="${GCC_64%gcc}"
 
   # Clang paths variables
   CLANG_FOLDER="$(find "${HOME}"/toolchains/linux-x86/clang-r* -maxdepth 0 -type d | tail -1)"
@@ -135,7 +141,6 @@ function upload()
 {
   if [[ "${BUILDTYPE}" == "test" ]]
   then
-    telegram_notify "$( basename "${OUTPUT}" ) is ready, uploading!"
     info "Uploading $( basename "${OUTPUT}" ) to Telegram..." && telegram_upload "${OUTPUT}"
     info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
   else
