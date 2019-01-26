@@ -160,9 +160,9 @@ function romenviroment()
   export CCACHE_DIR="${HOME}/.ccache-${ROM}"
 
   # Check ROM
-  if [[ "${ROM}" != "abc" && "${ROM}" != "nitrogen" ]]
+  if [[ "${ROM}" != "lineage" && "${ROM}" != "nitrogen" ]]
   then
-    endscript "Only ABC and NitrogenOS are supported!"
+    endscript "Only LineageOS and NitrogenOS are supported!"
   fi
 
   # Setup environment
@@ -171,9 +171,9 @@ function romenviroment()
 
   # Set the device
   info "Setting up the device..."
-  if [ "${ROM}" == "abc" ]
+  if [ "${ROM}" == "lineage" ]
   then
-    breakfast "${DEVICE}-userdebug"
+    breakfast "${DEVICE}"
   elif [ "${ROM}" == "nitrogen" ]
   then
     lunch "nitrogen_${DEVICE}-userdebug"

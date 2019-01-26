@@ -74,7 +74,7 @@ function buildrom()
 
   # Output files
   OUTPUT="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
-  [ "${ROM}" == "abc" ] && CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
+  [ "${ROM}" == "lineage" ] && CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
   [ "${ROM}" == "nitrogen" ] && CHANGELOG_PATH="${ROM_PATH}/out/target/product/${DEVICE}/nitrogen_${DEVICE}-Changelog.txt"
 }
 
@@ -82,8 +82,12 @@ function upload()
 {
   checkoutput || endscript "failed"
   FILENAME="$( basename "${OUTPUT}" )"
-  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}" && FILENAME=${FILENAME/./-UNSTABLE.}
-  [[ "${BUILDTYPE}" == "test" ]] && FILENAME=${FILENAME/./-TEST.}
+  if [ "${ROM}" == "nitrogen" ]
+  then
+    [[ "${BUILDTYPE}" == "personal" ]] && FILENAME=${FILENAME/./-UNSTABLE.}
+    [[ "${BUILDTYPE}" == "test" ]] && FILENAME=${FILENAME/./-TEST.}
+  fi
+  [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
   info "Uploading ${FILENAME} to wight554.tk..." && curl -T "${OUTPUT}" -u "${FTPLOGPASS}" ftp://wight554.tk/"${ROM}/${FILENAME}"
   telegram_notify "${FILENAME} can be downloaded [here](http://wight554.tk/${ROM}/${FILENAME}"
   [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
