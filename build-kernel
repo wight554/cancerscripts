@@ -79,7 +79,7 @@ function enviroment()
 function clean()
 {
   # Cleanup build directory if needed otherwise clean dtb only
-  if [[ -n "${CLEAN}" ]]
+  if [[ -n "${CLEAN}" || "${BUILDTYPE}" == "test" ]]
   then
     info "Cleaning build directory..."
     rm -rf "${BUILD_DIR}" && mkdir -p "${BUILD_DIR}"
