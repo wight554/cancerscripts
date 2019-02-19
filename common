@@ -186,7 +186,7 @@ function ramdisk()
   [[ -f "${COMPILED_IMAGE}" ]] || endscript "Kernel image doesn't exist!"
   # Common paths
   AK2_PATH="${HOME}/linux/ak2-${DEVICE}"
-  KERNEL_NAME="PlaceholderKernel"
+  KERNEL_NAME="PlaceholderKernel${MIUI}"
   OUTPUT="${AK2_PATH}/${KERNEL_NAME}-${DEVICE}-${DATE}.zip"
 
   # Move kernel image specified in kernel compilation script

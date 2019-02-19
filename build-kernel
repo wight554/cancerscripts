@@ -23,6 +23,10 @@ function parse_parameters()
       "-c"|"--clean")
         CLEAN=true ;;
 
+      "-m"|"--miui")
+        export MIUI="-miui"
+	TOOLCHAIN="clang" ;;
+
       *) die "Invalid parameter specified!" ;;
     esac
     shift
@@ -49,7 +53,7 @@ function enviroment()
   [[ ! -d "${BUILD_DIR}" ]] && warn "Build directory doesn't exist..."; mkdir -p "${BUILD_DIR}";
 
   # Defconfig
-  DEFCONFIG="${DEVICE}_defconfig"
+  DEFCONFIG="${DEVICE}${MIUI}_defconfig"
 
   # COMPILED_IMAGE
   export COMPILED_IMAGE="${BUILD_DIR}/arch/arm64/boot/Image.gz-dtb"
