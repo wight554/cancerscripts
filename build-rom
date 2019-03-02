@@ -82,14 +82,16 @@ function upload()
 {
   checkoutput || endscript "failed"
   FILENAME="$( basename "${OUTPUT}" )"
+  SF="https://sourceforge.net"
+  FRS="wight554@web.sourceforge.net:/home/frs"
   if [ "${ROM}" == "nitrogen" ]
   then
     [[ "${BUILDTYPE}" == "personal" ]] && FILENAME=${FILENAME/./-UNSTABLE.}
     [[ "${BUILDTYPE}" == "test" ]] && FILENAME=${FILENAME/./-TEST.}
   fi
   [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
-  info "Uploading ${FILENAME} to wight554.tk..." && curl -T "${OUTPUT}" -u "${FTPLOGPASS}" ftp://wight554.tk/"${ROM}/${FILENAME}"
-  telegram_notify "${FILENAME} can be downloaded [here](http://wight554.tk/${ROM}/${FILENAME}"
+  info "Uploading ${FILENAME} to wight554.tk..." && rsync -av -e ssh "${OUTPUT}" "${FRS}/project/wightroms/${ROM}/${FILENAME}"
+  telegram_notify "${FILENAME} can be downloaded [here](${SF}/projects/wightroms/files/${ROM}/${FILENAME}"
   [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
 }
 
