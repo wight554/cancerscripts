@@ -206,6 +206,9 @@ function ramdisk()
 # Check if compilation output exists
 function checkoutput()
 {
+  # Update date before upload
+  export DATE="$(date +'%Y%m%d')"
+
   for i in $(seq 0 "$(("${#OUTPUT[@]}"-1))")
   do
     [[ -f "${OUTPUT[${i}]}" && -n "${OUTPUT[${i}]}" ]] || endscript "Nothing to proceed with, output is empty!"
