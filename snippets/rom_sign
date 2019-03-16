@@ -18,7 +18,7 @@ function rom_sign {
     local NO_BACKUPTOOL BACKUP_FLAG
 
     # The following ROMs don't support backuptool
-    NO_BACKUPTOOL=( "nitrogen" )
+    NO_BACKUPTOOL=
 
     # Must be run at root of ROM source
     [[ ! -d $(pwd)/build/tools ]] && \
