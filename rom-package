@@ -51,7 +51,7 @@ function buildpackage()
 
   # Compilation
   info "Compiling ${PACKAGE} for ${DEVICE}..."
-  mka "${PACKAGE}" 2>&1 | tee "${HOME}/logs/buildpackage.log"
+  mka "${PACKAGE}" 2>&1 | tee "${LOGS_DIR}/buildpackage.log"
 }
 
 function filteroutput()

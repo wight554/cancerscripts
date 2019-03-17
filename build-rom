@@ -70,7 +70,7 @@ function buildrom()
 {
   #  Start compilation
   info "Compiling ${ROM} for ${DEVICE}..."
-  mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
+  mka bacon 2>&1 | tee "${LOGS_DIR}/buildrom.log"
 }
 
 function getoutput()

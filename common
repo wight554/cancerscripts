@@ -158,6 +158,8 @@ function romenviroment()
   export ROM_PATH="${HOME}/${ROM}"
   export BUILD_PATH="${ROM_PATH}/out/target/product/${DEVICE}"
   export CCACHE_DIR="${HOME}/.ccache-${ROM}"
+  export LOGS_DIR="${HOME}/logs"
+  [[ ! -d "${LOGS_DIR}" ]] && warn "Logs directory doesn't exist..."; mkdir -p "${LOGS_DIR}";
 
   # Check ROM
   if [[ "${ROM}" != "lineage" && "${ROM}" != "nitrogen" ]]

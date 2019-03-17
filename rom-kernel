@@ -47,7 +47,7 @@ function buildromkernel() {
 
   # Compilation
   info "Compiling boot and kernel images for ${DEVICE}..."
-  mka bootimage 2>&1 | tee "${HOME}/logs/buildromkernel.log"
+  mka bootimage 2>&1 | tee "${LOGS_DIR}/buildromkernel.log"
 
   # Export output image for anykernel2
   export COMPILED_IMAGE="${BUILD_PATH}/kernel"
