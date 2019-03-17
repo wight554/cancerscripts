@@ -83,7 +83,7 @@ function getoutput()
   fi
   mv "${ROM_PATH}/signed-ota_update.zip" "${ROM_PATH}/${FILENAME}"
   OUTPUT="${ROM_PATH}/${FILENAME}"
-  [ "${ROM}" == "nitrogen" ] && CHANGELOG_PATH="${ROM_PATH}/out/target/product/${DEVICE}/nitrogen_${DEVICE}-Changelog.txt"
+  [ "${ROM}" == "nitrogen" ] && CHANGELOG="${ROM_PATH}/out/target/product/${DEVICE}/nitrogen_${DEVICE}-Changelog.txt"
 }
 
 function upload()
@@ -93,7 +93,7 @@ function upload()
   [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
   info "Uploading ${FILENAME} to wight554.tk..." && rsync -av -e ssh "${OUTPUT}" "${FRS}/project/wightroms/${ROM}/${FILENAME}"
   telegram_notify "${FILENAME} can be downloaded [here](${SF}/projects/wightroms/files/${ROM}/${FILENAME}"
-  [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
+  [[ "${BUILDTYPE}" != "personal" ]] && info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG}"
 }
 
 #####################

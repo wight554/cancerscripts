@@ -59,7 +59,9 @@ function enviroment()
   export COMPILED_IMAGE="${BUILD_DIR}/arch/arm64/boot/Image.gz-dtb"
 
   # Changelog
-  export CHANGELOG_PATH="${HOME}/changelogs/Changelog-${DEVICE}-${DATE}.txt"
+  CHANGELOGS_DIR="${HOME}/changelogs"
+  [[ ! -d "${CHANGELOGS_DIR}" ]] && warn "Changelogs directory doesn't exist..."; mkdir -p "${CHANGELOGS_DIR}";
+  export CHANGELOG="${CHANGELOGS_DIR}/Changelog-${DEVICE}-${DATE}.txt"
 
   # GCC 32-bit paths variables
   GCC_32_FOLDER="${HOME}/toolchains/gcc-arm-8.x-arm-linux-gnueabi"
@@ -123,9 +125,9 @@ function buildkernel()
 function generate_changelog()
 {
   cd "${KERNEL_DIR}" || endscript "Kernel dir doesn't exist!"
-  if [[ -f "${CHANGELOG_PATH}" ]]
+  if [[ -f "${CHANGELOG}" ]]
   then
-    rm -f "${CHANGELOG_PATH}"
+    rm -f "${CHANGELOG}"
   fi
   for i in $(seq 7)
   do
@@ -137,7 +139,7 @@ function generate_changelog()
       echo "####################"
       git log --after="${AFTER}" --until="${UNTIL}" --pretty=tformat:"%h  %s  [%an]"
       echo ""
-    } >> "${CHANGELOG_PATH}"
+    } >> "${CHANGELOG}"
   done
 }
 
@@ -146,7 +148,7 @@ function upload()
   if [[ "${BUILDTYPE}" == "test" ]]
   then
     info "Uploading $( basename "${OUTPUT}" ) to Telegram..." && telegram_upload "${OUTPUT}"
-    info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG_PATH}"
+    info "Uploading changelog to Telegram..." && telegram_upload "${CHANGELOG}"
   else
     personal_upload
   fi
