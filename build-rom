@@ -71,24 +71,25 @@ function buildrom()
   #  Start compilation
   info "Compiling ${ROM} for ${DEVICE}..."
   mka bacon 2>&1 | tee "${HOME}/logs/buildrom.log"
+}
 
-  # Output files
-  OUTPUT="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip" )"
-  [ "${ROM}" == "lineage" ] && CHANGELOG_PATH="$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "Changelog*${DATE}*.txt" )"
+function getoutput()
+{
+  FILENAME="$(basename "$(find "${ROM_PATH}/out/target/product/${DEVICE}" -maxdepth 1 -iname "${ROM}*${DATE}*.zip")")"
+  if [ "${ROM}" == "nitrogen" ]
+  then
+    [[ "${BUILDTYPE}" == "personal" ]] && FILENAME="${FILENAME/./-UNSTABLE.}"
+    [[ "${BUILDTYPE}" == "test" ]] && FILENAME="${FILENAME/./-TEST.}"
+  fi
+  mv "${ROM_PATH}/signed-ota_update.zip" "${ROM_PATH}/${FILENAME}"
+  OUTPUT="${ROM_PATH}/${FILENAME}"
   [ "${ROM}" == "nitrogen" ] && CHANGELOG_PATH="${ROM_PATH}/out/target/product/${DEVICE}/nitrogen_${DEVICE}-Changelog.txt"
 }
 
 function upload()
 {
-  checkoutput || endscript "failed"
-  FILENAME="$( basename "${OUTPUT}" )"
   SF="https://sourceforge.net"
   FRS="wight554@web.sourceforge.net:/home/frs"
-  if [ "${ROM}" == "nitrogen" ]
-  then
-    [[ "${BUILDTYPE}" == "personal" ]] && FILENAME=${FILENAME/./-UNSTABLE.}
-    [[ "${BUILDTYPE}" == "test" ]] && FILENAME=${FILENAME/./-TEST.}
-  fi
   [[ "${BUILDTYPE}" == "personal" ]] && CHATID="${PM}"
   info "Uploading ${FILENAME} to wight554.tk..." && rsync -av -e ssh "${OUTPUT}" "${FRS}/project/wightroms/${ROM}/${FILENAME}"
   telegram_notify "${FILENAME} can be downloaded [here](${SF}/projects/wightroms/files/${ROM}/${FILENAME}"
@@ -101,6 +102,9 @@ function upload()
 
 # Common script
 source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/common"
+
+# ROM sign
+source "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" || return; pwd)/snippets/rom_sign"
 
 # If parameters are satisfied, print formatted message about build start
 parse_parameters "${@}"
@@ -117,6 +121,12 @@ clean
 
 # Compile ROM
 buildrom
+
+# Sign build
+rom_sign
+
+# Get compilation result
+getoutput
 
 # Check if compilation is fine
 checkoutput
