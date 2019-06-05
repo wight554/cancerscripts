@@ -38,8 +38,8 @@ function parse_parameters
   end
 
   if test $BUILDTYPE != "personal"
-  or test $BUILDTYPE != "release"
-  or test $BUILDTYPE != "test"
+  and test $BUILDTYPE != "release"
+  and test $BUILDTYPE != "test"
     die "Choose build type between personal, release and test!"
   end
 end

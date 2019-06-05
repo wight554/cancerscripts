@@ -33,7 +33,7 @@ function parse_parameters
   end
 
   if test $TOOLCHAIN != "gcc"
-  or test $TOOLCHAIN != "clang"
+  and test $TOOLCHAIN != "clang"
     die "Chose compiler between Clang and GCC!"
   end
 end
