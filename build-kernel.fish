@@ -61,12 +61,10 @@ function enviroment
 
   if test $TOOLCHAIN = "clang"
     # Clang paths variables
-    set BINUTILS_FOLDER "$HOME/toolchains/binutils"
-    set BINUTILS_BIN "$BINUTILS_FOLDER/bin"
     set CLANG_FOLDER "$HOME/toolchains/clang"
     set CLANG_BIN "$CLANG_FOLDER/bin"
 
-    set -g fish_user_paths $fish_user_paths $CLANG_BIN $BINUTILS_BIN
+    set -g fish_user_paths $fish_user_paths $CLANG_BIN
     set -g CLANG_VERSION (clang --version | head -n 1 | perl -pe 's/(  | |)\(.*?\)//g')
   else if test $TOOLCHAIN = "gcc"
     # GCC 32-bit paths variables
