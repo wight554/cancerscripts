@@ -63,7 +63,7 @@ function enviroment
     # Clang paths variables
     set BINUTILS_FOLDER "$HOME/toolchains/binutils"
     set BINUTILS_BIN "$BINUTILS_FOLDER/bin"
-    set CLANG_FOLDER (find "$HOME/toolchains/linux-x86"/clang-r* -maxdepth 0 -type d | tail -1)
+    set CLANG_FOLDER "$HOME/toolchains/clang"
     set CLANG_BIN "$CLANG_FOLDER/bin"
 
     set -g fish_user_paths $fish_user_paths $CLANG_BIN $BINUTILS_BIN
