@@ -24,13 +24,8 @@ function rom_sign
     die "This function must be run at root of ROM source!"
   end
 
-  # Abort if we didn't pass out dir argument
-  if ! set -q argv[1]
-    die "No out dir was passed to script!"
-  end
-
   # Make sure only one target files package exists prior to running the function
-  if test (find "$argv[1]/obj/PACKAGING/target_files_intermediates" -name \*target_files\*.zip | wc -l) -ne 1
+  if test (find "$BUILD_PATH/obj/PACKAGING/target_files_intermediates" -name \*target_files\*.zip | wc -l) -ne 1
     die "Less or more than one target files package detected!"
   end
 
@@ -56,7 +51,7 @@ function rom_sign
   # Sign target files package
   ./build/tools/releasetools/sign_target_files_apks \
     -o -d "$HOME/.android-certs" \
-    "$argv[1]"/obj/PACKAGING/target_files_intermediates/*-target_files-*.zip \
+    "$BUILD_PATH"/obj/PACKAGING/target_files_intermediates/*-target_files-*.zip \
     signed-target_files.zip
 
   # Convert signed target files package to signed OTA package

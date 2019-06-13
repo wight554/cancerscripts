@@ -166,7 +166,7 @@ printparams
 bish $COMMANDS
 
 # Sign build
-rom_sign $BUILD_PATH
+rom_sign
 
 # Get compilation result
 getoutput
