@@ -16,9 +16,6 @@
 
 
 function rom_sign
-  # Mark variables as local
-  set -l NO_BACKUPTOOL BACKUP_FLAG
-
   # The following ROMs don't support backuptool
   set NO_BACKUPTOOL "nitrogen"
 
@@ -49,17 +46,11 @@ function rom_sign
 
   # Check what ROM we're going to sign by looking inside vendor folder
   for ROMS in $NO_BACKUPTOOL
-    if test -n (find vendor -maxdepth 1 -name $ROMS)
+    if test $ROM = $ROMS
       # ROM lacks backuptool support
       set -e BACKUP_FLAG
       break
     end
-  end
-
-  # Pure AOSP doesn't have backuptool support implemented
-  # Let's just look for GLOBAL-PREUPLOAD.cfg in manifest repo
-  if set -q BACKUP_FLAG; and test -f .repo/manifests/GLOBAL-PREUPLOAD.cfg
-    set -e BACKUP_FLAG
   end
 
   # Sign target files package
