@@ -48,6 +48,9 @@ function rom_sign
     end
   end
 
+  # Add jdk prebuilts to path manually
+  set fish_user_paths $fish_user_paths "$ROM_PATH/prebuilts/jdk/jdk9/linux-x86/bin/"
+
   # Sign target files package
   ./build/tools/releasetools/sign_target_files_apks \
     -o -d "$HOME/.android-certs" \
