@@ -62,7 +62,7 @@ end
 
 function build
   #  Start compilation
-  set COMMANDS $COMMANDS "mka bacon  2>&1 | tee $LOGS_DIR/build-rom.log;"
+  set COMMANDS $COMMANDS "mka target-files-package otatools 2>&1 | tee $LOGS_DIR/build-rom.log;"
 end
 
 
@@ -84,14 +84,17 @@ end
 
 function getoutput
   # Once build finished we need to know it's date
-  set -g FILENAME (basename (find $BUILD_PATH -maxdepth 1 -iname "$ROM*"(date +'%Y%m%d')"*.zip"))
+  set DATE (date +'%Y%m%d')
   if test $ROM = "nitrogen"
+    set -g FILENAME "Nitrogen-OS-P-"$DEVICE"-"$DATE".zip"
     if test $BUILDTYPE = "personal"
       set FILENAME (string replace -- '.zip' '-UNSTABLE.zip' $FILENAME)
     end
     if test $BUILDTYPE = "test"
       set FILENAME (string replace -- '.zip' '-TEST.zip' $FILENAME)
     end
+  else if test $ROM = "lineage"
+    set -g FILENAME "lineage-16.0-"$DATE"-UNOFFICIAL-"$DEVICE".zip"
   end
   mv $ROM_PATH/signed-ota_update.zip $ROM_PATH/$FILENAME
   set -g ROM_ZIP $ROM_PATH/$FILENAME
