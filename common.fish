@@ -9,7 +9,7 @@
 ######################
 
 function bish
-  bash -c "$argv"
+  bash -c "trap 'echo; exit 1' SIGINT SIGTERM; $argv"
 end
 
 ######################
