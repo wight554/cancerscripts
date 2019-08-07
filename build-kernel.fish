@@ -99,7 +99,13 @@ function build
     make -s ARCH="arm64" O=$BUILD_DIR olddefconfig $JOBS_FLAG
     make O=$BUILD_DIR $JOBS_FLAG \
 		ARCH="arm64" \
+		AR="llvm-ar" \
 		CC="$CCACHE clang" \
+		LD="ld.lld" \
+		NM="llvm-nm" \
+		OBJCOPY="llvm-objcopy" \
+		OBJDUMP="llvm-objdump" \
+		STRIP="llvm-strip" \
 		KBUILD_COMPILER_STRING=$CLANG_VERSION \
 		KCFLAGS=$KCFLAGS \
 		CROSS_COMPILE="aarch64-linux-gnu-" \
