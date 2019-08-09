@@ -94,6 +94,9 @@ function build
   make -s ARCH="arm64" O=$BUILD_DIR $DEFCONFIG $JOBS_FLAG
   # Build kernel
   if test $TOOLCHAIN = "clang"
+    ./scripts/config --file $BUILD_DIR/.config -d CONFIG_INIT_STACK_NONE \
+		-e CONFIG_INIT_STACK_ALL
+    make -s ARCH="arm64" O=$BUILD_DIR olddefconfig $JOBS_FLAG
     make O=$BUILD_DIR $JOBS_FLAG \
 		ARCH="arm64" \
 		CC="$CCACHE clang" \
