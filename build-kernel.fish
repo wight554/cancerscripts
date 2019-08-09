@@ -148,7 +148,7 @@ function ramdisk
   # Common paths
   set AK2_PATH "$HOME/linux/ak2-$DEVICE"
 
-  set -g AK2_ZIP "$AK2_PATH/placeholder-kernel$MIUI-$DEVICE-$DATE.zip"
+  set -g AK2_ZIP "$AK2_PATH/wight554-kernel$MIUI-$DEVICE-$DATE.zip"
 
   # Cleanup AK2 folder
   rm -rf $AK2_PATH/{dtbs,kernel} $AK2_ZIP
