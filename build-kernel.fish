@@ -155,35 +155,35 @@ end
 #  Zipping AnyKernel2
 function ramdisk
   # Common paths
-  set AK2_PATH "$HOME/linux/ak2-$DEVICE"
+  set AK3_PATH "$HOME/linux/ak3-$DEVICE"
 
-  set -g AK2_ZIP "$AK2_PATH/wight554-kernel$MIUI-$DEVICE-$DATE.zip"
+  set -g AK3_ZIP "$AK3_PATH/wight554-kernel$MIUI-$DEVICE-$DATE.zip"
 
-  # Cleanup AK2 folder
-  rm -rf $AK2_PATH/{dtbs,kernel} $AK2_ZIP
+  # Cleanup AK3 folder
+  rm -rf $AK3_PATH/{dtbs,kernel} $AK3_ZIP
 
   # Re-create kernel folders
-  mkdir -p "$AK2_PATH/dtbs/"
-  mkdir -p "$AK2_PATH/kernel/"
+  mkdir -p "$AK3_PATH/dtbs/"
+  mkdir -p "$AK3_PATH/kernel/"
 
   # Move kernel image specified in kernel compilation script
-  info "Moving kernel image to AnyKernel2 folder..."
+  info "Moving kernel image to AnyKernel3 folder..."
   for DTB in $DTBS
-    mv -f $DTB "$AK2_PATH/dtbs/"
+    mv -f $DTB "$AK3_PATH/dtbs/"
   end
-  mv -f $IMAGE "$AK2_PATH/kernel/"
+  mv -f $IMAGE "$AK3_PATH/kernel/"
 
   # Create flashable AnyKernel2 zip
-  cd $AK2_PATH; or endscript "AnyKernel2 folder doesn't exist!"
-  zip -r9 $AK2_ZIP ./* -x "README.md" -x "./*.zip"
+  cd $AK3_PATH; or endscript "AnyKernel2 folder doesn't exist!"
+  zip -r9 $AK3_ZIP ./* -x "README.md" -x "./*.zip"
 end
 
 function upload
   if set -q RELEASE
-    info "Uploading "(basename $AK2_ZIP)" to Telegram..."; and telegram_upload $AK2_ZIP
+    info "Uploading "(basename $AK3_ZIP)" to Telegram..."; and telegram_upload $AK3_ZIP
     info "Uploading changelog to Telegram..." && telegram_upload $CHANGELOG
   else
-    personal_upload $AK2_ZIP
+    personal_upload $AK3_ZIP
   end
 end
 
@@ -223,7 +223,7 @@ ramdisk
 generate_changelog
 
 # Check if zip exists
-checkoutput $AK2_ZIP
+checkoutput $AK3_ZIP
 
 # Upload if needed
 upload
